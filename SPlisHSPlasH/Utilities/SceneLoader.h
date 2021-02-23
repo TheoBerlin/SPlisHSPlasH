@@ -8,7 +8,7 @@
 
 namespace Utilities
 {
-	/** \brief Importer of SPlisHSPlasH scene files. 
+	/** \brief Importer of SPlisHSPlasH scene files.
 	*/
 	class SceneLoader
 	{
@@ -41,7 +41,7 @@ namespace Utilities
 
 			std::string mapFile;
 			bool mapInvert;
-			Real mapThickness;	
+			Real mapThickness;
 			Eigen::Matrix<unsigned int, 3, 1, Eigen::DontAlign> mapResolution;
 			unsigned int samplingMode;
 		};
@@ -92,7 +92,7 @@ namespace Utilities
 			unsigned int shapeType;
 			Vector3r x;
 			Matrix3r rotation;
-			Vector3r scale; 
+			Vector3r scale;
 			Real startTime;
 			Real endTime;
 		};
@@ -121,6 +121,7 @@ namespace Utilities
 			std::vector<AnimationFieldData*> animatedFields;
 			std::vector<MaterialData*> materials;
 			Real particleRadius;
+			bool useRegionalTimeStepping;
 			bool sim2D;
 			Real timeStepSize;
 			Vector3r camPosition;

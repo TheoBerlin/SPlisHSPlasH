@@ -2,17 +2,17 @@ set(WCSPH_HEADER_FILES
 	WCSPH/SimulationDataWCSPH.h
 	WCSPH/TimeStepWCSPH.h
 	)
-	
+
 set(WCSPH_SOURCE_FILES
 	WCSPH/SimulationDataWCSPH.cpp
 	WCSPH/TimeStepWCSPH.cpp
-	)		
-	
+	)
+
 set(PCISPH_HEADER_FILES
 	PCISPH/SimulationDataPCISPH.h
 	PCISPH/TimeStepPCISPH.h
 	)
-	
+
 set(PCISPH_SOURCE_FILES
 	PCISPH/SimulationDataPCISPH.cpp
 	PCISPH/TimeStepPCISPH.cpp
@@ -23,56 +23,56 @@ set(PBF_HEADER_FILES
 	PBF/TimeStepPBF.h
 	PBF/TimeIntegration.h
 	)
-	
+
 set(PBF_SOURCE_FILES
 	PBF/SimulationDataPBF.cpp
 	PBF/TimeStepPBF.cpp
 	PBF/TimeIntegration.cpp
-	)	
-	
+	)
+
 set(IISPH_HEADER_FILES
 	IISPH/SimulationDataIISPH.h
 	IISPH/TimeStepIISPH.h
 	)
-	
+
 set(IISPH_SOURCE_FILES
 	IISPH/SimulationDataIISPH.cpp
 	IISPH/TimeStepIISPH.cpp
-	)		
-	
+	)
+
 set(DFSPH_HEADER_FILES
 	DFSPH/SimulationDataDFSPH.h
 	DFSPH/TimeStepDFSPH.h
 	)
-	
+
 set(DFSPH_SOURCE_FILES
 	DFSPH/SimulationDataDFSPH.cpp
 	DFSPH/TimeStepDFSPH.cpp
-	)	
-	
+	)
+
 set(PF_HEADER_FILES
 	PF/SimulationDataPF.h
 	PF/TimeStepPF.h
 	)
-	
+
 set(PF_SOURCE_FILES
 	PF/SimulationDataPF.cpp
 	PF/TimeStepPF.cpp
 	)
-	
+
 set(SURFACETENSION_HEADER_FILES
 	SurfaceTension/SurfaceTensionBase.h
 	SurfaceTension/SurfaceTension_Becker2007.h
 	SurfaceTension/SurfaceTension_Akinci2013.h
 	SurfaceTension/SurfaceTension_He2014.h
 	)
-	
+
 set(SURFACETENSION_SOURCE_FILES
 	SurfaceTension/SurfaceTensionBase.cpp
 	SurfaceTension/SurfaceTension_Becker2007.cpp
 	SurfaceTension/SurfaceTension_Akinci2013.cpp
 	SurfaceTension/SurfaceTension_He2014.cpp
-	)	
+	)
 
 set(VISCOSITY_HEADER_FILES
 	Viscosity/ViscosityBase.h
@@ -84,7 +84,7 @@ set(VISCOSITY_HEADER_FILES
 	Viscosity/Viscosity_Takahashi2015.h
 	Viscosity/Viscosity_Weiler2018.h
 	)
-	
+
 set(VISCOSITY_SOURCE_FILES
 	Viscosity/ViscosityBase.cpp
 	Viscosity/Viscosity_XSPH.cpp
@@ -94,44 +94,44 @@ set(VISCOSITY_SOURCE_FILES
 	Viscosity/Viscosity_Peer2016.cpp
 	Viscosity/Viscosity_Takahashi2015.cpp
 	Viscosity/Viscosity_Weiler2018.cpp
-	)	
-	
+	)
+
 set(VORTICITY_HEADER_FILES
 	Vorticity/VorticityBase.h
 	Vorticity/MicropolarModel_Bender2017.h
 	Vorticity/VorticityConfinement.h
 	)
-	
+
 set(VORTICITY_SOURCE_FILES
 	Vorticity/VorticityBase.cpp
 	Vorticity/MicropolarModel_Bender2017.cpp
 	Vorticity/VorticityConfinement.cpp
-	)	
+	)
 
 set(DRAG_HEADER_FILES
 	Drag/DragBase.h
 	Drag/DragForce_Gissler2017.h
 	Drag/DragForce_Macklin2014.h
 	)
-	
+
 set(DRAG_SOURCE_FILES
 	Drag/DragBase.cpp
 	Drag/DragForce_Gissler2017.cpp
 	Drag/DragForce_Macklin2014.cpp
-	)	
-	
+	)
+
 set(ELASTICITY_HEADER_FILES
 	Elasticity/ElasticityBase.h
-	Elasticity/Elasticity_Becker2009.h	
+	Elasticity/Elasticity_Becker2009.h
 	Elasticity/Elasticity_Peer2018.h
 	)
-	
+
 set(ELASTICITY_SOURCE_FILES
 	Elasticity/ElasticityBase.cpp
 	Elasticity/Elasticity_Becker2009.cpp
 	Elasticity/Elasticity_Peer2018.cpp
-	)	
-	
+	)
+
 set(UTILS_HEADER_FILES
 	Utilities/AVX_math.h
 	Utilities/DebugTools.h
@@ -148,7 +148,7 @@ set(UTILS_HEADER_FILES
 	Utilities/SimpleQuadrature.h
 	Utilities/WindingNumbers.h
 	)
-	
+
 set(UTILS_SOURCE_FILES
 	Utilities/DebugTools.cpp
 	Utilities/MathFunctions.cpp
@@ -161,22 +161,30 @@ set(UTILS_SOURCE_FILES
 	Utilities/SDFFunctions.cpp
 	Utilities/SimpleQuadrature.cpp
 	Utilities/WindingNumbers.cpp
-	)	
-	
+	)
+
+set(REGIONAL_TIME_STEP_HEADER_FILES
+	RegionalTimeStep/ParticleGrid.h
+)
+
+set(REGIONAL_TIME_STEP_SOURCE_FILES
+	RegionalTimeStep/ParticleGrid.cpp
+)
+
 if (USE_THIRD_PARTY_METHODS)
-	list(APPEND SURFACETENSION_HEADER_FILES 
+	list(APPEND SURFACETENSION_HEADER_FILES
 		SurfaceTension/SurfaceTension_ZorillaRitter2020_haltonVec323.h
 		SurfaceTension/SurfaceTension_ZorillaRitter2020.h
 	)
-	
+
 	list(APPEND SURFACETENSION_SOURCE_FILES
 		SurfaceTension/SurfaceTension_ZorillaRitter2020.cpp
 	)
 endif()
-	
+
 add_library(SPlisHSPlasH
 	Common.h
-	
+
 	NeighborhoodSearch.h
 
 	AnimationField.cpp
@@ -205,41 +213,41 @@ add_library(SPlisHSPlasH
 	Simulation.cpp
 	Simulation.h
 	TimeManager.cpp
-	TimeManager.h	
+	TimeManager.h
 	TimeStep.cpp
 	TimeStep.h
 	TriangleMesh.cpp
 	TriangleMesh.h
 	NonPressureForceBase.cpp
 	NonPressureForceBase.h
-	
+
 	${WCSPH_HEADER_FILES}
 	${WCSPH_SOURCE_FILES}
-	
+
 	${PCISPH_HEADER_FILES}
 	${PCISPH_SOURCE_FILES}
-	
+
 	${PBF_HEADER_FILES}
 	${PBF_SOURCE_FILES}
-	
+
 	${IISPH_HEADER_FILES}
 	${IISPH_SOURCE_FILES}
-	
+
 	${DFSPH_HEADER_FILES}
 	${DFSPH_SOURCE_FILES}
-	
+
 	${PF_HEADER_FILES}
 	${PF_SOURCE_FILES}
-	
+
 	${VISCOSITY_HEADER_FILES}
 	${VISCOSITY_SOURCE_FILES}
-	
+
 	${SURFACETENSION_HEADER_FILES}
 	${SURFACETENSION_SOURCE_FILES}
-	
+
 	${VORTICITY_HEADER_FILES}
 	${VORTICITY_SOURCE_FILES}
-	
+
 	${DRAG_HEADER_FILES}
 	${DRAG_SOURCE_FILES}
 
@@ -248,6 +256,9 @@ add_library(SPlisHSPlasH
 
 	${UTILS_HEADER_FILES}
 	${UTILS_SOURCE_FILES}
+
+	${REGIONAL_TIME_STEP_HEADER_FILES}
+	${REGIONAL_TIME_STEP_SOURCE_FILES}
 )
 
 add_dependencies(SPlisHSPlasH

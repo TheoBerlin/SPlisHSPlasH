@@ -5,6 +5,7 @@
 #include "SPlisHSPlasH/TimeStep.h"
 #include "SimulationDataDFSPH.h"
 #include "SPlisHSPlasH/SPHKernels.h"
+#include "SPlisHSPlasH/RegionalTimeStep/ParticleGrid.h"
 
 #define USE_WARMSTART
 #define USE_WARMSTART_V
@@ -25,6 +26,7 @@ namespace SPH
 	{
 	protected:
 		SimulationDataDFSPH m_simulationData;
+		ParticleGrid m_particleGrid;
 		unsigned int m_counter;
 		const Real m_eps = static_cast<Real>(1.0e-5);
 		bool m_enableDivergenceSolver;

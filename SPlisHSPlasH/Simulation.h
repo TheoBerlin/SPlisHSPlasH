@@ -13,7 +13,7 @@
 #endif
 
 
-/** Loop over the fluid neighbors of all fluid phases. 
+/** Loop over the fluid neighbors of all fluid phases.
 * Simulation *sim and unsigned int fluidModelIndex must be defined.
 */
 #define forall_fluid_neighbors(code) \
@@ -26,7 +26,7 @@
 			const Vector3r &xj = fm_neighbor->getPosition(neighborIndex); \
 			code \
 		} \
-	} 
+	}
 
 /** Loop over the fluid neighbors of the same fluid phase.
 * Simulation *sim, unsigned int fluidModelIndex and FluidModel* model must be defined.
@@ -37,7 +37,7 @@
 		const unsigned int neighborIndex = sim->getNeighbor(fluidModelIndex, fluidModelIndex, i, j); \
 		const Vector3r &xj = model->getPosition(neighborIndex); \
 		code \
-	} 
+	}
 
 /** Loop over the boundary neighbors of all fluid phases.
 * Simulation *sim and unsigned int fluidModelIndex must be defined.
@@ -100,7 +100,7 @@ for (unsigned int pid = 0; pid < nBoundaries; pid++) \
 			const Vector3f8 xj_avx = convertVec_zero(&sim->getNeighborList(fluidModelIndex, pid, i)[j], &fm_neighbor->getPosition(0), count); \
 			code \
 		} \
-	} 
+	}
 
 /** Loop over the fluid neighbors of all fluid phases.
 * Simulation *sim and unsigned int fluidModelIndex must be defined.
@@ -117,7 +117,7 @@ for (unsigned int pid = 0; pid < nBoundaries; pid++) \
 			code \
 			idx++; \
 		} \
-	} 
+	}
 
 /** Loop over the fluid neighbors of the same fluid phase.
 * Simulation *sim, unsigned int fluidModelIndex and FluidModel* model must be defined.
@@ -129,7 +129,7 @@ for (unsigned int pid = 0; pid < nBoundaries; pid++) \
 		const unsigned int count = std::min(maxN - j, 8u); \
 		const Vector3f8 xj_avx = convertVec_zero(&sim->getNeighborList(fluidModelIndex, fluidModelIndex, i)[j], &model->getPosition(0), count); \
 		code \
-	} 
+	}
 
 /** Loop over the fluid neighbors of the same fluid phase.
 * Simulation *sim, unsigned int fluidModelIndex and FluidModel* model must be defined.
@@ -140,7 +140,7 @@ for (unsigned int pid = 0; pid < nBoundaries; pid++) \
 	{ \
 		const unsigned int count = std::min(maxN - j, 8u); \
 		code \
-	} 
+	}
 
 /** Loop over the boundary neighbors of all fluid phases.
 * Simulation *sim and unsigned int fluidModelIndex must be defined.
@@ -167,7 +167,7 @@ namespace SPH
 	enum class SimulationMethods { WCSPH = 0, PCISPH, PBF, IISPH, DFSPH, PF, NumSimulationMethods };
 	enum class BoundaryHandlingMethods { Akinci2012 = 0, Koschier2017, Bender2019, NumSimulationMethods };
 
-	/** \brief Class to manage the current simulation time and the time step size. 
+	/** \brief Class to manage the current simulation time and the time step size.
 	* This class is a singleton.
 	*/
 	class Simulation : public GenParam::ParameterObject
@@ -247,7 +247,7 @@ namespace SPH
 		Real m_supportRadius;
 		bool m_sim2D;
 		bool m_enableZSort;
-		std::function<void()> m_simulationMethodChanged;		
+		std::function<void()> m_simulationMethodChanged;
 		int m_boundaryHandlingMethod;
 		std::vector<NonPressureForceMethod> m_dragMethods;
 		std::vector<NonPressureForceMethod> m_elasticityMethods;
@@ -261,7 +261,7 @@ namespace SPH
 		virtual void initParameters();
 
 		void registerNonpressureForces();
-		
+
 	private:
 		static Simulation *current;
 
@@ -291,7 +291,7 @@ namespace SPH
 		void updateBoundaryVolume();
 
 		AnimationFieldSystem* getAnimationFieldSystem() { return m_animationFieldSystem; }
-		
+
 		BoundaryHandlingMethods getBoundaryHandlingMethod() const { return (BoundaryHandlingMethods) m_boundaryHandlingMethod; }
 		void setBoundaryHandlingMethod(BoundaryHandlingMethods val) { m_boundaryHandlingMethod = (int) val; }
 

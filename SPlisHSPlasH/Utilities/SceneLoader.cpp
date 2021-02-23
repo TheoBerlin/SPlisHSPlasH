@@ -28,12 +28,12 @@ void SceneLoader::readScene(const char *fileName, Scene &scene)
 	{
 		LOG_ERR << e.what();
 		exit(1);
-	}	
+	}
 
 	std::string base_path = FileSystem::getFilePath(fileName);
 
 	//////////////////////////////////////////////////////////////////////////
-	// read configuration 
+	// read configuration
 	//////////////////////////////////////////////////////////////////////////
 	if (m_jsonData.find("Configuration") != m_jsonData.end())
 	{
@@ -55,6 +55,9 @@ void SceneLoader::readScene(const char *fileName, Scene &scene)
 		readVector(config["cameraPosition"], scene.camPosition);
 		scene.camLookat = Vector3r(0.0, 0.0, 0.0);
 		readVector(config["cameraLookat"], scene.camLookat);
+
+		scene.useRegionalTimeStepping = false;
+		readValue(config["useRegionalTimeStepping"], scene.useRegionalTimeStepping);
 	}
 
 	//////////////////////////////////////////////////////////////////////////
@@ -248,7 +251,7 @@ void SceneLoader::readScene(const char *fileName, Scene &scene)
 			// translation
 			data->x = Vector3r::Zero();
 			readVector(emitter["translation"], data->x);
-			
+
 			// rotation
 			// default direction without rotation is +x
 			Vector3r axis(0,0,1);
@@ -316,7 +319,7 @@ void SceneLoader::readScene(const char *fileName, Scene &scene)
 
 			data->scale= Vector3r::Ones();
 			readVector(field["scale"], data->scale);
-			
+
 			// shape position
 			data->x = Vector3r::Zero();
 			readVector(field["translation"], data->x);
@@ -422,7 +425,7 @@ void SceneLoader::readParameterObject(const std::string& key, ParameterObject* p
 		return;
 
 	//////////////////////////////////////////////////////////////////////////
-	// read configuration 
+	// read configuration
 	//////////////////////////////////////////////////////////////////////////
 	if (m_jsonData.find(key) != m_jsonData.end())
 	{

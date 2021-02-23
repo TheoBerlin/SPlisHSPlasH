@@ -34,6 +34,7 @@ using Matrix4r = Eigen::Matrix<Real, 4, 4, Eigen::DontAlign>;
 using Matrix5r = Eigen::Matrix<Real, 5, 5, Eigen::DontAlign>;
 using Matrix6r = Eigen::Matrix<Real, 6, 6, Eigen::DontAlign>;
 using Vector2i = Eigen::Matrix<int, 2, 1, Eigen::DontAlign>;
+using Vector3i = Eigen::Matrix<int, 3, 1, Eigen::DontAlign>;
 using Vector3f = Eigen::Matrix<float, 3, 1, Eigen::DontAlign>;
 using Vector4f = Eigen::Matrix<float, 4, 1, Eigen::DontAlign>;
 using Matrix3f = Eigen::Matrix<float, 3, 3, Eigen::DontAlign>;
@@ -43,13 +44,13 @@ using AngleAxisr = Eigen::AngleAxis<Real>;
 using Quaternionr = Eigen::Quaternion<Real, Eigen::DontAlign>;
 using VectorXr = Eigen::Matrix<Real, -1, 1, 0, -1, 1>;
 
-#if defined(WIN32) || defined(_WIN32) || defined(WIN64)	   
+#if defined(WIN32) || defined(_WIN32) || defined(WIN64)
 	// Enable memory leak detection
 #ifdef _DEBUG
-	  #define _CRTDBG_MAP_ALLOC 
-	  #include <stdlib.h> 
-	  #include <crtdbg.h> 
-	  #define DEBUG_NEW new(_NORMAL_BLOCK, __FILE__, __LINE__) 	
+	  #define _CRTDBG_MAP_ALLOC
+	  #include <stdlib.h>
+	  #include <crtdbg.h>
+	  #define DEBUG_NEW new(_NORMAL_BLOCK, __FILE__, __LINE__)
 	  #define REPORT_MEMORY_LEAKS _CrtSetDbgFlag ( _CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF );
 #else
 	  #define REPORT_MEMORY_LEAKS
@@ -58,7 +59,7 @@ using VectorXr = Eigen::Matrix<Real, -1, 1, 0, -1, 1>;
   #define REPORT_MEMORY_LEAKS
 #endif
 
-#if defined(WIN32) || defined(_WIN32) || defined(WIN64)	   
+#if defined(WIN32) || defined(_WIN32) || defined(WIN64)
   #define FORCE_INLINE __forceinline
 #else
   #define FORCE_INLINE __attribute__((always_inline))

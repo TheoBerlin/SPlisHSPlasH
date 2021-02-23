@@ -1,4 +1,5 @@
 #include "Simulation.h"
+#include "Simulator/SceneConfiguration.h"
 #include "TimeManager.h"
 #include "Utilities/Timing.h"
 #include "TimeStep.h"
@@ -9,6 +10,7 @@
 #include "SPlisHSPlasH/IISPH/TimeStepIISPH.h"
 #include "SPlisHSPlasH/DFSPH/TimeStepDFSPH.h"
 #include "SPlisHSPlasH/PF/TimeStepPF.h"
+#include "SPlisHSPlasH/RegionalTimeStep/TimeStepADFSPH.h"
 #include "BoundaryModel_Akinci2012.h"
 #include "BoundaryModel_Bender2019.h"
 #include "BoundaryModel_Koschier2017.h"
@@ -67,7 +69,7 @@ int Simulation::ENUM_KOSCHIER2017 = -1;
 int Simulation::ENUM_BENDER2019 = -1;
 
 
-Simulation::Simulation () 
+Simulation::Simulation ()
 {
 	m_cflMethod = 1;
 	m_cflFactor = 0.5;
@@ -90,7 +92,7 @@ Simulation::Simulation ()
 	m_boundaryHandlingMethod = static_cast<int>(BoundaryHandlingMethods::Bender2019);
 }
 
-Simulation::~Simulation () 
+Simulation::~Simulation ()
 {
 #ifdef USE_DEBUG_TOOLS
 	delete m_debugTools;
@@ -395,14 +397,11 @@ void Simulation::updateTimeStepSize()
 
 void Simulation::updateTimeStepSizeCFL()
 {
-	const Real radius = m_particleRadius;
-	Real h = TimeManager::getCurrent()->getTimeStepSize();
-	Simulation *sim = Simulation::getCurrent();
-	const unsigned int nBoundaries = sim->numberOfBoundaryModels();
-
-	// Approximate max. position change due to current velocities
+	/*	Approximate max. position change due to current velocities.
+		If regional time stepping is used, searching for the max speed can be made faster by searching through grid
+		cells instead of fluid particles. */
 	Real maxVel = 0.1;
-	const Real diameter = static_cast<Real>(2.0)*radius;
+	Real h = TimeManager::getCurrent()->getTimeStepSize();
 
 	// fluid particles
 	for (unsigned int fluidModelIndex = 0; fluidModelIndex < numberOfFluidModels(); fluidModelIndex++)
@@ -418,6 +417,12 @@ void Simulation::updateTimeStepSizeCFL()
 				maxVel = velMag;
 		}
 	}
+
+	const Real radius = m_particleRadius;
+	Simulation *sim = Simulation::getCurrent();
+	const unsigned int nBoundaries = sim->numberOfBoundaryModels();
+
+	const Real diameter = static_cast<Real>(2.0)*radius;
 
 	// boundary particles
 	if (getBoundaryHandlingMethod() == BoundaryHandlingMethods::Akinci2012)
@@ -460,7 +465,7 @@ void Simulation::updateTimeStepSizeCFL()
 		}
 	}
 
-	// Approximate max. time step size 		
+	// Approximate max. time step size
 	h = m_cflFactor * static_cast<Real>(0.4) * (diameter / (sqrt(maxVel)));
 
 	h = min(h, m_cflMaxTimeStepSize);
@@ -679,7 +684,7 @@ void Simulation::updateBoundaryVolume()
 			static_cast<BoundaryModel_Akinci2012*>(getBoundaryModel(body))->computeBoundaryVolume();
 	}
 
-	////////////////////////////////////////////////////////////////////////// 
+	//////////////////////////////////////////////////////////////////////////
 	// Compute boundary psi for all dynamic bodies
 	//////////////////////////////////////////////////////////////////////////
 	for (unsigned int body = 0; body < numberOfBoundaryModels(); body++)
@@ -696,7 +701,7 @@ void Simulation::updateBoundaryVolume()
 		}
 	}
 
-	// Activate only fluids 
+	// Activate only fluids
 	m_neighborhoodSearch->set_active(false);
 	for (unsigned int i = 0; i < numberOfFluidModels(); i++)
 	{
