@@ -1,25 +1,26 @@
 {
-	"Configuration": 
+	"Configuration":
 	{
 		"particleRadius": 0.025,
 		"numberOfStepsPerRenderUpdate": 2,
-		"density0": 1000, 
+		"density0": 1000,
 		"simulationMethod": 4,
-		"gravitation": [0,-9.81,0], 
-		"cflMethod": 1, 
+		"gravitation": [0,-9.81,0],
+		"cflMethod": 1,
 		"cflFactor": 0.5,
 		"cflMaxTimeStepSize": 0.005,
 		"maxIterations": 100,
 		"maxError": 0.05,
 		"maxIterationsV": 100,
-		"maxErrorV": 0.1,		
+		"maxErrorV": 0.1,
 		"stiffness": 50000,
 		"exponent": 7,
 		"velocityUpdateMethod": 0,
 		"enableDivergenceSolver": true,
-		"boundaryHandlingMethod": 2
+		"boundaryHandlingMethod": 2,
+		"useRegionalTimeStepping": true
 	},
-	"Simulation": 
+	"Simulation":
 	{
 		"timeStepSize": 0.005,
 		"maxIter" : 5,
@@ -39,7 +40,7 @@
 		"cloth_xyPoissonRatio": 0.3,
 		"cloth_yxPoissonRatio": 0.3,
 		"cloth_normalizeStretch": 0,
-		"cloth_normalizeShear": 0, 
+		"cloth_normalizeShear": 0,
 		"solid_stiffness": 1.0,
 		"solid_poissonRatio": 0.2,
 		"solid_normalizeStretch": 0,
@@ -53,23 +54,23 @@
 			"rotationAxis": [1, 0, 0],
 			"rotationAngle": 0,
 			"scale": [3.1, 8, 1.6],
-			"color": [0.1, 0.4, 0.6, 1.0], 
+			"color": [0.1, 0.4, 0.6, 1.0],
 			"isDynamic": false,
 			"isWall": true,
 			"restitution" : 0.6,
 			"friction" : 0.0,
 			"collisionObjectType": 2,
-			"collisionObjectScale": [3.1, 8, 1.6],	
+			"collisionObjectScale": [3.1, 8, 1.6],
 			"invertSDF": true,
-			"mapInvert": true, 
+			"mapInvert": true,
 			"mapThickness": 0.0,
 			"mapResolution": [30,40,15]
 		},
 		{
 			"id": 2,
 			"geometryFile": "../models/sphere.obj",
-			"isDynamic": 1, 
-			"density": 200, 
+			"isDynamic": 1,
+			"density": 200,
 			"translation": [0.1,2.0,0],
 			"rotationAxis": [1, 0, 0],
 			"rotationAngle": 0.0,
@@ -77,46 +78,46 @@
 			"velocity": [0,0,0],
 			"restitution" : 0.6,
 			"friction" : 0.2,
-			"color": [0.3, 0.5, 0.8, 1.0], 
+			"color": [0.3, 0.5, 0.8, 1.0],
 			"collisionObjectType": 1,
 			"collisionObjectScale": [0.2, 0.2, 0.2],
-			"mapInvert": false, 
+			"mapInvert": false,
 			"mapThickness": 0.0,
 			"mapResolution": [20,20,20]
-		}, 
+		},
 		{
 			"id": 3,
 			"geometryFile": "../models/cylinder.obj",
-			"isDynamic": 1, 
-			"density": 700, 
+			"isDynamic": 1,
+			"density": 700,
 			"translation": [-0.2, 3, 0],
 			"rotationAxis": [1, 1, 1],
 			"rotationAngle": 0.5,
 			"scale": [0.1, 0.5, 0.1],
 			"restitution" : 0.6,
 			"friction" : 0.2,
-			"color": [0.2, 0.6, 0.4, 1.0], 
+			"color": [0.2, 0.6, 0.4, 1.0],
 			"collisionObjectType": 3,
 			"collisionObjectScale": [0.1, 0.5, 0.1],
-			"mapInvert": false, 
+			"mapInvert": false,
 			"mapThickness": 0.0,
 			"mapResolution": [20,20,20]
 		},
 		{
 			"id": 4,
 			"geometryFile": "../models/torus.obj",
-			"isDynamic": 1, 
-			"density": 100, 
+			"isDynamic": 1,
+			"density": 100,
 			"translation": [0.4,1.0,0.0],
 			"rotationAxis": [0, 0, 1],
 			"rotationAngle": 1.0,
 			"scale": [0.2, 0.2, 0.2],
 			"restitution" : 0.6,
 			"friction" : 0.2,
-			"color": [0.5, 0.2, 0.6, 1.0], 
+			"color": [0.5, 0.2, 0.6, 1.0],
 			"collisionObjectType": 4,
 			"collisionObjectScale": [0.2, 0.1, 0.2],
-			"mapInvert": false, 
+			"mapInvert": false,
 			"mapThickness": 0.0,
 			"mapResolution": [20,20,20]
 		}
@@ -129,7 +130,7 @@
 			"translation": [-0.75, 0.0, 0.0],
 			"scale": [1,1,1]
 		}
-	]	
+	]
 }
 
 

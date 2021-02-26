@@ -3,6 +3,7 @@
 #include "SPlisHSPlasH/SPHKernels.h"
 #include "SimulationDataDFSPH.h"
 #include <iostream>
+#include "Simulator/SceneConfiguration.h"
 #include "Utilities/Timing.h"
 #include "Utilities/Counting.h"
 #include "SPlisHSPlasH/Simulation.h"
@@ -20,6 +21,7 @@ int TimeStepDFSPH::SOLVER_ITERATIONS_V = -1;
 int TimeStepDFSPH::MAX_ITERATIONS_V = -1;
 int TimeStepDFSPH::MAX_ERROR_V = -1;
 int TimeStepDFSPH::USE_DIVERGENCE_SOLVER = -1;
+int TimeStepDFSPH::RENDER_REGION_COLORS = -1;
 
 
 TimeStepDFSPH::TimeStepDFSPH() :
@@ -82,6 +84,15 @@ void TimeStepDFSPH::initParameters()
 	USE_DIVERGENCE_SOLVER = createBoolParameter("enableDivergenceSolver", "Enable divergence solver", &m_enableDivergenceSolver);
 	setGroup(USE_DIVERGENCE_SOLVER, "DFSPH");
 	setDescription(USE_DIVERGENCE_SOLVER, "Turn divergence solver on/off.");
+
+	if (SceneConfiguration::getCurrent()->getScene().useRegionalTimeStepping)
+	{
+		RENDER_REGION_COLORS = createBoolParameter("renderRegionColors", "Render region colors",
+			std::bind(&ParticleGrid::regionColorsEnabled, &m_particleGrid),
+			std::bind(&ParticleGrid::toggleRegionColorsRendering, &m_particleGrid, std::placeholders::_1));
+		setGroup(RENDER_REGION_COLORS, "DFSPH");
+		setDescription(RENDER_REGION_COLORS, "Color each particle using its region's level");
+	}
 }
 
 void TimeStepDFSPH::step()
@@ -91,7 +102,9 @@ void TimeStepDFSPH::step()
 	const Real h = tm->getTimeStepSize();
 	const unsigned int nModels = sim->numberOfFluidModels();
 
-	m_particleGrid.determineRegions();
+	if (SceneConfiguration::getCurrent()->getScene().useRegionalTimeStepping)
+		m_particleGrid.determineRegions();
+
 	performNeighborhoodSearch();
 
 #ifdef USE_PERFORMANCE_OPTIMIZATION

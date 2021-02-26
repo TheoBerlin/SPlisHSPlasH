@@ -24,7 +24,7 @@ Shader::~Shader(void)
 		glDeleteProgram(m_program);
 }
 
-void Shader::compileShaderString(GLenum type, const std::string &source) 
+void Shader::compileShaderString(GLenum type, const std::string &source)
 {
 	GLuint shader = glCreateShader (type);
 
@@ -52,11 +52,10 @@ void Shader::compileShaderString(GLenum type, const std::string &source)
 		std::cerr << "Compile log: " << infoLog << std::endl;
 		delete [] infoLog;
 	}
-	
+
 }
 
-
-void Shader::createAndLinkProgram() 
+void Shader::createAndLinkProgram()
 {
 	m_program = glCreateProgram ();
 	for (unsigned char i = 0; i < 3; i++)
@@ -85,13 +84,13 @@ void Shader::createAndLinkProgram()
 		glDeleteShader(m_shaders[i]);
 }
 
-void Shader::begin() 
+void Shader::begin()
 {
 	if (m_initialized)
 		glUseProgram(m_program);
 }
 
-void Shader::end() 
+void Shader::end()
 {
 	if (m_initialized)
 		glUseProgram(0);
@@ -117,19 +116,29 @@ GLuint Shader::getUniform(const std::string &uniform)
 	return m_uniforms[uniform];
 }
 
+void Shader::addStorageBuffer(const std::string &storageBuffer)
+{
+	m_storageBuffers[storageBuffer] = glGetUniformLocation(m_program, storageBuffer.c_str());
+}
+
+GLuint Shader::getStorageBuffer(const std::string &storageBuffer)
+{
+	return m_storageBuffers[storageBuffer];
+}
+
 void Shader::compileShaderFile(GLenum whichShader, const std::string &filename)
 {
 	std::ifstream fp;
 	fp.open(filename.c_str(), std::ios_base::in);
-	if(fp) 
+	if(fp)
 	{
 		std::ostringstream output;
 		output << fp.rdbuf();
 		fp.close();
 
 		compileShaderString(whichShader, output.str());
-	} 
-	else 
+	}
+	else
 	{
 		std::cerr << "Error occurred while loading shader: " << filename << std::endl;
 	}

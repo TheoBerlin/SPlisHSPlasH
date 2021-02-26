@@ -5,8 +5,8 @@
 #include "GUI/OpenGL/Shader.h"
 #include <vector>
 
-namespace SPH 
-{	
+namespace SPH
+{
 	class FluidModel;
 	class BoundaryModel;
 	class BoundaryModel_Akinci2012;
@@ -17,13 +17,14 @@ namespace SPH
 		static Shader m_shader_vector;
 		static Shader m_shader_scalar;
 		static Shader m_shader_scalar_map;
+		static Shader m_shader_regions;
 		static Shader m_meshShader;
 		static GLuint m_textureMap;
-	
+
 	public:
-		Simulator_OpenGL();
-		virtual ~Simulator_OpenGL();
-		
+		Simulator_OpenGL() = default;
+		virtual ~Simulator_OpenGL() = default;
+
 		static void initShaders(const std::string &shaderPath);
 		static Shader& getShaderVector() { return m_shader_vector; }
 		static Shader& getShaderScalar() { return m_shader_scalar; }
@@ -32,11 +33,13 @@ namespace SPH
 		static void meshShaderEnd();
 		static void pointShaderBegin(Shader *shader, const Real particleRadius, const float *col, const Real minVal, const Real maxVal, const bool useTexture = false, float const* color_map = nullptr);
 		static void pointShaderEnd(Shader *shader, const bool useTexture = false);
-		static void renderFluid(FluidModel *model, float *fluidColor, 
+		static void pointRegionShaderBegin(Real particleRadius, const Vector3r* particlePositions, const unsigned int *particleLevels);
+		static void pointRegionShaderEnd();
+		static void renderFluid(FluidModel *model, float *fluidColor,
 			const unsigned int colorMapType, const bool useScalarField, const std::vector<float>& scalarField,
 			const Real renderMinValue, const Real renderMaxValue);
 		static void renderSelectedParticles(FluidModel *model, const std::vector<std::vector<unsigned int>>& selectedParticles,
-			const unsigned int colorMapType, 
+			const unsigned int colorMapType,
 			const Real renderMinValue, const Real renderMaxValue);
 		static void renderBoundary(BoundaryModel *model, const float *col);
 		static void renderBoundaryParticles(BoundaryModel_Akinci2012 *model, const float *col);

@@ -8,7 +8,7 @@
 
 #define REGION_LEVELS_COUNT 3
 // Equivalent to the 'N' variable in Koike et al.
-#define LEVEL_TIMESTEP_MULTIPLIER 3
+#define LEVEL_TIMESTEP_MULTIPLIER 2
 
 namespace SPH
 {
@@ -32,8 +32,8 @@ namespace SPH
         unsigned int regionLevel;
 
         /* Indices for m_cellParticlePairs. These mark the interval for the cell's particles within said array. */
-        unsigned int cellIndexBegin;
-        unsigned int cellIndexEnd;
+        unsigned int pairIndexBegin;
+        unsigned int pairIndexEnd;
     };
 
     class ParticleGrid
@@ -52,7 +52,10 @@ namespace SPH
 
             void simulateLevels();
 
-            Real getMaxVelocity() const { return m_maxVelocity; }
+            void toggleRegionColorsRendering(bool enabled);
+
+            FORCE_INLINE Real getMaxVelocity() const        { return m_maxVelocity; }
+            FORCE_INLINE bool regionColorsEnabled()    { return m_regionColorsEnabled; }
 
         private:
             void initGridSizeAndResolution();
@@ -67,6 +70,10 @@ namespace SPH
 
             // Recursively simulates each level in the simulation
             void simulateLevel(unsigned int level);
+
+            // Should only be called before the cell-particle pairs array is sorted
+            void defineCellLevels();
+            void defineParticleLevels();
 
         private:
             Vector3i m_resolution;
@@ -84,6 +91,9 @@ namespace SPH
 
             // Each particle's cell index
             std::vector<std::vector<CellParticlePair>> m_cellParticlePairs;
+            // Each particle's level. This is only used for rendering particle region colors, and can be toggled.
+            std::vector<std::vector<unsigned int>> m_particleLevels;
+
             std::vector<std::vector<GridCell>> m_cells;
 
             // Assumes the scene uses unitbox.obj. Each component is a distance to a wall.
@@ -94,6 +104,8 @@ namespace SPH
 
             // The maximum velocity out of every fluid particle
             Real m_maxVelocity = -1.0f;
+
+            bool m_regionColorsEnabled = false;
     };
 }
 

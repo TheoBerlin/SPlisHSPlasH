@@ -1,5 +1,4 @@
 #include "Simulation.h"
-#include "Simulator/SceneConfiguration.h"
 #include "TimeManager.h"
 #include "Utilities/Timing.h"
 #include "TimeStep.h"

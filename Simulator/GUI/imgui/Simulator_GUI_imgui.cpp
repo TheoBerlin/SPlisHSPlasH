@@ -19,12 +19,12 @@ using namespace Utilities;
 
 Simulator_GUI_imgui::Simulator_GUI_imgui(SimulatorBase *base) :
 	Simulator_GUI_Base(base)
-{	
+{
 	m_currentFluidModel = 0;
 }
 
 Simulator_GUI_imgui::~Simulator_GUI_imgui(void)
-{	
+{
 	imguiParameters::cleanup();
 }
 
@@ -44,7 +44,7 @@ void Simulator_GUI_imgui::init(int argc, char **argv, const char *name)
 	MiniGL::addKeyFunc('s', std::bind(&SimulatorBase::saveState, m_simulatorBase, ""));
 #ifdef WIN32
 	MiniGL::addKeyFunc('l', std::bind(&SimulatorBase::loadStateDialog, m_simulatorBase));
-#endif 
+#endif
 
 	if (MiniGL::checkOpenGLVersion(3, 3))
 		Simulator_OpenGL::initShaders(m_simulatorBase->getExePath() + "/resources/shaders");
@@ -86,7 +86,7 @@ void Simulator_GUI_imgui::initImgui()
 	style->FrameBorderSize = 0.5f;
 	style->FrameRounding = 3.0f;
 	style->TabBorderSize = 1.0f;
-	
+
 	std::string font = Utilities::FileSystem::normalizePath(m_simulatorBase->getExePath() + "/resources/fonts/Roboto-Medium.ttf");
 	//std::string font = Utilities::FileSystem::normalizePath(m_simulatorBase->getExePath() + "/resources/fonts/DroidSans.ttf");
 	io.Fonts->AddFontFromFileTTF(font.c_str(), 15.0f);
@@ -134,7 +134,7 @@ void Simulator_GUI_imgui::createSimulationParameterGUI()
 	ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_FirstUseEver);
 	ImGui::SetNextWindowSize(ImVec2(390, 900), ImGuiCond_FirstUseEver);
 
-	ImGui::Begin("Settings");  
+	ImGui::Begin("Settings");
 	ImGui::PushItemWidth(175);
 
 	imguiParameters::createParameterGUI();
@@ -194,7 +194,7 @@ void Simulator_GUI_imgui::initSimulationParameterGUI()
 			for (unsigned int j = 0; j < model->numberOfFields(); j++)
 			{
 				const FieldDescription& field = model->getField(j);
-				if ((field.type == FieldType::Scalar) || (field.type == FieldType::Vector3) || 
+				if ((field.type == FieldType::Scalar) || (field.type == FieldType::Vector3) ||
 					(field.type == FieldType::UInt) || (field.type == FieldType::Matrix3) ||
 					(field.type == FieldType::Vector6) || (field.type == FieldType::Matrix6))
 				{
@@ -203,7 +203,7 @@ void Simulator_GUI_imgui::initSimulationParameterGUI()
 					idx++;
 				}
 			}
-			param->getFct = [this]() -> int { 
+			param->getFct = [this]() -> int {
 				const std::string& fieldName = getSimulatorBase()->getColorField(m_currentFluidModel);
 				for (auto i = 0; i < m_colorFieldNames.size(); i++)
 				{
@@ -212,8 +212,8 @@ void Simulator_GUI_imgui::initSimulationParameterGUI()
 				}
 				return 0;
 			};
-			param->setFct = [this](int v) { 
-				getSimulatorBase()->setColorField(m_currentFluidModel, m_colorFieldNames[v]); 
+			param->setFct = [this](int v) {
+				getSimulatorBase()->setColorField(m_currentFluidModel, m_colorFieldNames[v]);
 				getSimulatorBase()->determineMinMaxOfScalarField();
 				getSimulatorBase()->updateScalarField();
 			};
@@ -280,7 +280,7 @@ void Simulator_GUI_imgui::update()
 	ImGui_ImplOpenGL3_NewFrame();
 	ImGui_ImplGlfw_NewFrame();
 	ImGui::NewFrame();
-	
+
 	createSimulationParameterGUI();
 
 	// Rendering

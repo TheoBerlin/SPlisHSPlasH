@@ -61,6 +61,7 @@ namespace SPH
 		static int MAX_ITERATIONS_V;
 		static int MAX_ERROR_V;
 		static int USE_DIVERGENCE_SOLVER;
+		static int RENDER_REGION_COLORS;
 
 		TimeStepDFSPH();
 		virtual ~TimeStepDFSPH(void);

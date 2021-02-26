@@ -31,22 +31,11 @@ void ParticleGrid::determineRegions()
     resetCells();
     findCellParticlePairs();
     findMaxVelocity();
+    defineCellLevels();
 
-    const Real smallestTimeStep = TimeManager::getCurrent()->getTimeStepSize();
-
-    // Decide each cell's level
-    for (std::vector<GridCell> &fluidModelCells : m_cells)
+    if (m_regionColorsEnabled)
     {
-        #pragma omp parallel default(shared)
-        {
-            // Use each block's max velocity to determine its level
-            #pragma omp for schedule(static)
-            for (int cellIdx = 0; cellIdx < fluidModelCells.size(); cellIdx++)
-            {
-                GridCell &cell = fluidModelCells[cellIdx];
-                cell.regionLevel = unsigned int(m_maxVelocity / cell.maxSpeed) / LEVEL_TIMESTEP_MULTIPLIER;
-            }
-        }
+        defineParticleLevels();
     }
 }
 
@@ -61,6 +50,43 @@ void ParticleGrid::simulateLevels()
 
     // simulateLevel(REGION_LEVELS_COUNT - 1);
     // std::vector<unsigned int> interp
+}
+
+void ParticleGrid::toggleRegionColorsRendering(bool enabled)
+{
+    m_regionColorsEnabled = enabled;
+
+    if (m_regionColorsEnabled)
+    {
+        Simulation *simulation = Simulation::getCurrent();
+        const unsigned int nModels = simulation->numberOfFluidModels();
+
+        m_particleLevels.resize(nModels);
+
+        for (unsigned int modelIdx = 0; modelIdx < nModels; modelIdx++)
+        {
+            // The actual levels are defined during simulation steps
+            FluidModel *fluidModel = simulation->getFluidModel(modelIdx);
+            m_particleLevels[modelIdx].resize(fluidModel->numActiveParticles());
+
+            fluidModel->addField({ "particle levels", FieldType::UInt, [this, modelIdx](unsigned int particleIdx) { return &m_particleLevels[modelIdx][particleIdx]; } });
+        }
+    }
+    else
+    {
+        // Deregister particle level fields
+        Simulation *simulation = Simulation::getCurrent();
+        const unsigned int nModels = simulation->numberOfFluidModels();
+
+        for (unsigned int modelIdx = 0; modelIdx < nModels; modelIdx++)
+        {
+            // The actual levels are defined during simulation steps
+            FluidModel *fluidModel = simulation->getFluidModel(modelIdx);
+            fluidModel->removeFieldByName("particle levels");
+        }
+
+        m_particleLevels.clear();
+    }
 }
 
 void ParticleGrid::initGridSizeAndResolution()
@@ -189,19 +215,21 @@ void ParticleGrid::findCellParticlePairs()
         for (unsigned int cellIndex = 0; cellIndex < gridCells.size(); cellIndex++)
         {
             GridCell &cell = gridCells[cellIndex];
-            cell.cellIndexBegin = cellParticlePairIndex;
+            cell.pairIndexBegin = cellParticlePairIndex;
 
             const unsigned int beginPairIndex = cellParticlePairIndex;
             while (cellParticlePairIndex < cellParticlePairs.size() && cellParticlePairs[cellParticlePairIndex].cellIndex == cellIndex)
                 cellParticlePairIndex += 1;
 
-            cell.cellIndexEnd = cellParticlePairIndex;
+            cell.pairIndexEnd = cellParticlePairIndex;
         }
     }
 }
 
 Real ParticleGrid::findMaxVelocity()
 {
+    m_maxVelocity = -1.0f;
+
     for (const std::vector<GridCell> &fluidModelCells : m_cells)
     {
         for (const GridCell &cell : fluidModelCells)
@@ -216,4 +244,56 @@ Real ParticleGrid::findMaxVelocity()
 void ParticleGrid::simulateLevel(unsigned int level)
 {
     // std::vector<unsigned int> interp
+}
+
+void ParticleGrid::defineCellLevels()
+{
+    for (std::vector<GridCell> &fluidModelCells : m_cells)
+    {
+        #pragma omp parallel default(shared)
+        {
+            const Real logN = std::logf(LEVEL_TIMESTEP_MULTIPLIER);
+
+            // Use each block's max velocity to determine its level
+            #pragma omp for schedule(static)
+            for (int cellIdx = 0; cellIdx < fluidModelCells.size(); cellIdx++)
+            {
+                GridCell &cell = fluidModelCells[cellIdx];
+                cell.regionLevel = unsigned int(std::logf(m_maxVelocity / cell.maxSpeed) / logN);
+                cell.regionLevel = std::min<unsigned int>(cell.regionLevel, REGION_LEVELS_COUNT - 1);
+            }
+        }
+    }
+}
+
+void ParticleGrid::defineParticleLevels()
+{
+    Simulation *simulation = Simulation::getCurrent();
+    const unsigned int numFluidModels = simulation->numberOfFluidModels();
+
+    for (unsigned int modelIdx = 0; modelIdx < numFluidModels; modelIdx++)
+    {
+        #pragma omp parallel default(shared)
+        {
+            std::vector<unsigned int> &particleLevels = m_particleLevels[modelIdx];
+            std::vector<GridCell> &gridCells = m_cells[modelIdx];
+            std::vector<CellParticlePair> &cellParticlePairs = m_cellParticlePairs[modelIdx];
+
+            const int cellCount = (int)gridCells.size();
+
+            #pragma omp for schedule(static)
+            for (int cellIdx = 0; cellIdx < cellCount; cellIdx++)
+            {
+                const GridCell &cell = gridCells[cellIdx];
+                unsigned int pairIdx = cell.pairIndexBegin;
+                const unsigned int pairIdxEnd = cell.pairIndexEnd;
+
+                while (pairIdx < pairIdxEnd)
+                {
+                    const unsigned int particleIdx = cellParticlePairs[pairIdx++].particleIndex;
+                    particleLevels[particleIdx] = cell.regionLevel;
+                }
+            }
+        }
+    }
 }

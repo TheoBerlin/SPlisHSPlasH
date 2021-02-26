@@ -18,6 +18,7 @@ namespace SPH
 		void createAndLinkProgram();
 		void addAttribute(const std::string &attribute);
 		void addUniform(const std::string &uniform);
+		void addStorageBuffer(const std::string &storageBuffer);
 		bool isInitialized();
 
 		void begin();
@@ -26,13 +27,15 @@ namespace SPH
 		//An indexer that returns the location of the attribute/uniform
 		GLuint getAttribute(const std::string &attribute);
 		GLuint getUniform(const std::string &uniform);
+		GLuint getStorageBuffer(const std::string &storageBuffer);
 
 	private:
 		bool m_initialized;
 		GLuint	m_program;
 		std::map<std::string, GLuint> m_attributes;
 		std::map<std::string, GLuint> m_uniforms;
-		GLuint m_shaders[3];	
+		std::map<std::string, GLuint> m_storageBuffers;
+		GLuint m_shaders[3];
 	};
 }
 
