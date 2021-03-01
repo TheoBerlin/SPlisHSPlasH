@@ -12,11 +12,12 @@ In;
 
 out vec4 out_color;
 
-const vec3 levelColors[3] =
-vec3[3](
+const vec3 levelColors[4] =
+vec3[4](
     vec3(1.0, 0.0, 0.0),
     vec3(1.0, 1.0, 0.0),
-    vec3(0.0, 0.0, 1.0)
+    vec3(0.0, 0.0, 1.0),
+    vec3(0.3, 0.3, 0.3) // Region border color
 );
 
 void main()

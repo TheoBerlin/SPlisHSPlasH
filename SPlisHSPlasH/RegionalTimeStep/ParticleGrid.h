@@ -75,6 +75,8 @@ namespace SPH
             void defineCellLevels();
             void defineParticleLevels();
 
+            void identifyRegionBorders();
+
         private:
             Vector3i m_resolution;
 
@@ -95,6 +97,10 @@ namespace SPH
             std::vector<std::vector<unsigned int>> m_particleLevels;
 
             std::vector<std::vector<GridCell>> m_cells;
+
+            /*  One element per cell. If a cell is in a region border, its regional level will be stored. If the cell
+                is not in a border, UINT32_MAX will be stored instead. */
+            std::vector<std::vector<unsigned int>> m_regionBorderLevels;
 
             // Assumes the scene uses unitbox.obj. Each component is a distance to a wall.
             Vector3r m_gridSize = { 1.0f, 1.0f, 1.0f };
