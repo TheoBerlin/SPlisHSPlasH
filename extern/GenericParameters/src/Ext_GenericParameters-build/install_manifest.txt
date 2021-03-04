@@ -1,0 +1,6 @@
+D:/Documents/SPlisHSPlasH/extern/install/GenericParameters/include/EnumParameter.h
+D:/Documents/SPlisHSPlasH/extern/install/GenericParameters/include/FunctionParameter.h
+D:/Documents/SPlisHSPlasH/extern/install/GenericParameters/include/NumericParameter.h
+D:/Documents/SPlisHSPlasH/extern/install/GenericParameters/include/Parameter.h
+D:/Documents/SPlisHSPlasH/extern/install/GenericParameters/include/ParameterObject.h
+D:/Documents/SPlisHSPlasH/extern/install/GenericParameters/include/VectorParameter.h

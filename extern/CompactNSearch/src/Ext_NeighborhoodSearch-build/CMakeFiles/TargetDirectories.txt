@@ -1,0 +1,4 @@
+D:/Documents/SPlisHSPlasH/extern/CompactNSearch/src/Ext_NeighborhoodSearch-build/CMakeFiles/CompactNSearch.dir
+D:/Documents/SPlisHSPlasH/extern/CompactNSearch/src/Ext_NeighborhoodSearch-build/CMakeFiles/INSTALL.dir
+D:/Documents/SPlisHSPlasH/extern/CompactNSearch/src/Ext_NeighborhoodSearch-build/CMakeFiles/ALL_BUILD.dir
+D:/Documents/SPlisHSPlasH/extern/CompactNSearch/src/Ext_NeighborhoodSearch-build/CMakeFiles/ZERO_CHECK.dir

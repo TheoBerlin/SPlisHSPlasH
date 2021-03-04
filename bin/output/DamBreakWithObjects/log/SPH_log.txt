@@ -1,0 +1,78 @@
+[2021-02-25 12:49:44] Info:    SPlisHSPlasH version: 2.9.1
+[2021-02-25 12:49:44] Debug:   Git refspec:          refs/heads/particle_grid
+[2021-02-25 12:49:44] Debug:   Git SHA1:             efdb2c5f2f6fa11540e6c8044940f9157d8959ea
+[2021-02-25 12:49:44] Debug:   Git status:           DIRTY
+[2021-02-25 12:49:44] Debug:   Host name:            DESKTOP-KSQC32J
+[2021-02-25 12:49:44] Info:    Output directory: D:/Documents/SPlisHSPlasH/bin/output/DamBreakWithObjects
+[2021-02-25 12:49:44] Info:    Load scene file: D:\Documents\SPlisHSPlasH\data\Scenes\DamBreakWithObjects.json
+[2021-02-25 12:49:44] Info:    Initialize dynamic boundary simulation
+[2021-02-25 12:49:44] Info:    Initialize fluid particles
+[2021-02-25 12:49:44] Info:    Number of fluid particles: 24389
+[2021-02-25 12:49:44] Info:    OpenGL version 4.6
+[2021-02-25 12:49:44] Info:    Vendor: NVIDIA Corporation
+[2021-02-25 12:49:44] Info:    Renderer: GeForce RTX 2080 Ti/PCIe/SSE2
+[2021-02-25 12:49:44] Info:    Version: 4.6.0 NVIDIA 460.89
+[2021-02-25 12:49:44] Info:    ---------------------------------------------------------------------------
+
+[2021-02-25 12:49:44] Info:    ---------------------------------------------------------------------------
+
+[2021-02-25 12:49:44] Info:    Load scene file: D:\Documents\SPlisHSPlasH\data\Scenes\DamBreakWithObjects.json
+[2021-02-25 12:49:44] Info:    Scene: D:\Documents\SPlisHSPlasH\data\Scenes\DamBreakWithObjects.json
+[2021-02-25 12:49:44] Info:    Loading D:/Documents/SPlisHSPlasH/data/models/UnitBox.obj
+[2021-02-25 12:49:44] Info:    Number of triangles: 12
+[2021-02-25 12:49:44] Info:    Number of vertices: 8
+[2021-02-25 12:49:44] Info:    Loading D:/Documents/SPlisHSPlasH/data/models/sphere.obj
+[2021-02-25 12:49:44] Info:    Number of triangles: 2280
+[2021-02-25 12:49:44] Info:    Number of vertices: 1146
+[2021-02-25 12:49:44] Info:    Loading D:/Documents/SPlisHSPlasH/data/models/cylinder.obj
+[2021-02-25 12:49:44] Info:    Number of triangles: 760
+[2021-02-25 12:49:44] Info:    Number of vertices: 382
+[2021-02-25 12:49:44] Info:    Loading D:/Documents/SPlisHSPlasH/data/models/torus.obj
+[2021-02-25 12:49:44] Info:    Number of triangles: 1600
+[2021-02-25 12:49:44] Info:    Number of vertices: 800
+[2021-02-25 12:49:44] Info:    Loaded cached volume map: D:/Documents/SPlisHSPlasH/data/Scenes/Cache/UnitBox_db_vm_0.025_s3.1_8_1.6_r30_40_15_i1_t0.cdm
+[2021-02-25 12:49:44] Info:    Loaded cached volume map: D:/Documents/SPlisHSPlasH/data/Scenes/Cache/sphere_db_vm_0.025_s0.2_0.2_0.2_r20_20_20_i0_t0.cdm
+[2021-02-25 12:49:44] Info:    Loaded cached volume map: D:/Documents/SPlisHSPlasH/data/Scenes/Cache/cylinder_db_vm_0.025_s0.1_0.5_0.1_r20_20_20_i0_t0.cdm
+[2021-02-25 12:49:44] Info:    Loaded cached volume map: D:/Documents/SPlisHSPlasH/data/Scenes/Cache/torus_db_vm_0.025_s0.2_0.2_0.2_r20_20_20_i0_t0.cdm
+[2021-02-25 12:51:31] Info:    Sum of emitted particles: 0
+[2021-02-25 12:51:31] Info:    Sum of reused particles: 0
+[2021-02-25 12:51:31] Info:    Average time: neighborhood_search: 3.86483 ms
+[2021-02-25 12:51:31] Info:    Average time: computeVolumeAndBoundaryX: 2.66578 ms
+[2021-02-25 12:51:31] Info:    Average time: computeDFSPHFactor: 0.403466 ms
+[2021-02-25 12:51:31] Info:    Average time: divergenceSolve: 2.54016 ms
+[2021-02-25 12:51:31] Info:    Average time: computeNonPressureForces: 0.711032 ms
+[2021-02-25 12:51:31] Info:    Average time: pressureSolve: 4.65732 ms
+[2021-02-25 12:51:31] Info:    Average time: emitParticles: 0.000569724 ms
+[2021-02-25 12:51:31] Info:    Average time: animateParticles: 0.00076252 ms
+[2021-02-25 12:51:31] Info:    Average time: SimStep: 18.4399 ms
+[2021-02-25 12:51:31] Info:    Average time: position constraints projection: 0.00102818 ms
+[2021-02-25 12:51:31] Info:    Average time: collision detection: 0.327356 ms
+[2021-02-25 12:51:31] Info:    Average time: simulation step: 4.65084 ms
+[2021-02-25 12:51:31] Info:    Average time: SimStep - PBD: 4.66063 ms
+[2021-02-25 12:51:31] Info:    ---------------------------------------------------------------------------
+
+[2021-02-25 12:51:31] Info:    Time sum: neighborhood_search: 14539.5 ms
+[2021-02-25 12:51:31] Info:    Time sum: computeVolumeAndBoundaryX: 10028.7 ms
+[2021-02-25 12:51:31] Info:    Time sum: computeDFSPHFactor: 1517.84 ms
+[2021-02-25 12:51:31] Info:    Time sum: divergenceSolve: 9556.09 ms
+[2021-02-25 12:51:31] Info:    Time sum: computeNonPressureForces: 2674.9 ms
+[2021-02-25 12:51:31] Info:    Time sum: pressureSolve: 17520.8 ms
+[2021-02-25 12:51:31] Info:    Time sum: emitParticles: 2.1433 ms
+[2021-02-25 12:51:31] Info:    Time sum: animateParticles: 2.8686 ms
+[2021-02-25 12:51:31] Info:    Time sum: SimStep: 69371 ms
+[2021-02-25 12:51:31] Info:    Time sum: position constraints projection: 3.868 ms
+[2021-02-25 12:51:31] Info:    Time sum: collision detection: 1231.51 ms
+[2021-02-25 12:51:31] Info:    Time sum: simulation step: 17496.5 ms
+[2021-02-25 12:51:31] Info:    Time sum: SimStep - PBD: 17533.3 ms
+[2021-02-25 12:51:31] Info:    ---------------------------------------------------------------------------
+
+[2021-02-25 12:51:31] Info:    Average number: DFSPH - iterationsV: 1.02977
+[2021-02-25 12:51:31] Info:    Average number: DFSPH - iterations: 3.6781
+[2021-02-25 12:51:31] Info:    Average number: Time step size: 0.00271063
+[2021-02-25 12:51:31] Info:    ---------------------------------------------------------------------------
+
+[2021-02-25 12:51:31] Info:    Total number: DFSPH - iterationsV: 3874
+[2021-02-25 12:51:31] Info:    Total number: DFSPH - iterations: 13837
+[2021-02-25 12:51:31] Info:    Total number: Time step size: 10.1974
+[2021-02-25 12:51:31] Info:    ---------------------------------------------------------------------------
+
