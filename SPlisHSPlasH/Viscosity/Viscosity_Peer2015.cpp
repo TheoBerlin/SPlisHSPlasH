@@ -70,9 +70,12 @@ void Viscosity_Peer2015::computeDensities()
 
 	#pragma omp parallel default(shared)
 	{
-		#pragma omp for schedule(static)  
-		for (int i = 0; i < (int)numParticles; i++)
+		const unsigned int* particleIndices = model->getParticleIndices();
+
+		#pragma omp for schedule(static)
+		for (int particleNr = 0; particleNr < numParticles; particleNr++)
 		{
+			const unsigned int i = particleIndices[particleNr];
 			Real& density = m_density[i];
 
 			// Compute current density for particle i
@@ -128,9 +131,12 @@ void Viscosity_Peer2015::matrixVecProd(const Real* vec, Real *result, void *user
 
 	#pragma omp parallel default(shared)
 	{
-		#pragma omp for schedule(static) 
-		for (int i = 0; i < (int)numParticles; i++)
+		const unsigned int* particleIndices = model->getParticleIndices();
+
+		#pragma omp for schedule(static)
+		for (int particleNr = 0; particleNr < numParticles; particleNr++)
 		{
+			const unsigned int i = particleIndices[particleNr];
 			// Diagonal element
 			const Vector3r &xi = model->getPosition(i);
 			result[i] = (visco->m_density[i] - model->getMass(i) * sim->W_zero()) * vec[i];
@@ -177,9 +183,12 @@ void Viscosity_Peer2015::step()
 	// Compute target
 	#pragma omp parallel default(shared)
 	{
-		#pragma omp for schedule(static) nowait 
-		for (int i = 0; i < numParticles; i++)
+		const unsigned int* particleIndices = model->getParticleIndices();
+
+		#pragma omp for schedule(static) nowait
+		for (int particleNr = 0; particleNr < numParticles; particleNr++)
 		{
+			const unsigned int i = particleIndices[particleNr];
 			const Vector3r &xi = m_model->getPosition(i);
 			const Vector3r &vi = m_model->getVelocity(i);
 			const Real density_i = m_model->getDensity(i);
@@ -243,9 +252,12 @@ void Viscosity_Peer2015::step()
 	//////////////////////////////////////////////////////////////////////////
 	#pragma omp parallel default(shared)
 	{
-		#pragma omp for schedule(static) nowait 
-		for (int i = 0; i < (int)numParticles; i++)
+		const unsigned int* particleIndices = model->getParticleIndices();
+
+		#pragma omp for schedule(static) nowait
+		for (int particleNr = 0; particleNr < numParticles; particleNr++)
 		{
+			const unsigned int i = particleIndices[particleNr];
 			const Vector3r &xi = m_model->getPosition(i);
 			Vector3r rhs;
 			rhs.setZero();
@@ -272,7 +284,7 @@ void Viscosity_Peer2015::step()
 	}
 
 	//////////////////////////////////////////////////////////////////////////
-	// Solve linear system 
+	// Solve linear system
 	//////////////////////////////////////////////////////////////////////////
 	START_TIMING("CG solve");
 	m_iterations = 0;
@@ -293,9 +305,12 @@ void Viscosity_Peer2015::step()
 
 	#pragma omp parallel default(shared)
 	{
-		#pragma omp for schedule(static) nowait 
-		for (int i = 0; i < (int)numParticles; i++)
+		const unsigned int* particleIndices = model->getParticleIndices();
+
+		#pragma omp for schedule(static) nowait
+		for (int particleNr = 0; particleNr < numParticles; particleNr++)
 		{
+			const unsigned int i = particleIndices[particleNr];
 			Vector3r &vi = m_model->getVelocity(i);
 			vi[0] = x0[i];
 			vi[1] = x1[i];

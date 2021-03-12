@@ -45,9 +45,12 @@ void SurfaceTension_He2014::step()
 	// Compute color field
 	#pragma omp parallel default(shared)
 	{
-		#pragma omp for schedule(static)  
-		for (int i = 0; i < (int)numParticles; i++)
+		const unsigned int* particleIndices = model->getParticleIndices();
+
+		#pragma omp for schedule(static)
+		for (int particleNr = 0; particleNr < numParticles; particleNr++)
 		{
+			const unsigned int i = particleIndices[particleNr];
 			const Vector3r &xi = m_model->getPosition(i);
 			Real &ci = getColor(i);
 			ci = m_model->getMass(i) / m_model->getDensity(i) * sim->W_zero();
@@ -87,9 +90,12 @@ void SurfaceTension_He2014::step()
 	// Compute gradient of color field
 	#pragma omp parallel default(shared)
 	{
-		#pragma omp for schedule(static)  
-		for (int i = 0; i < (int)numParticles; i++)
+		const unsigned int* particleIndices = model->getParticleIndices();
+
+		#pragma omp for schedule(static)
+		for (int particleNr = 0; particleNr < numParticles; particleNr++)
 		{
+			const unsigned int i = particleIndices[particleNr];
 			const Vector3r &xi = m_model->getPosition(i);
 			Vector3r gradC_i;
 			gradC_i.setZero();
@@ -110,9 +116,12 @@ void SurfaceTension_He2014::step()
 	// Compute surface tension force
 	#pragma omp parallel default(shared)
 	{
-		#pragma omp for schedule(static)  
-		for (int i = 0; i < (int)numParticles; i++)
+		const unsigned int* particleIndices = model->getParticleIndices();
+
+		#pragma omp for schedule(static)
+		for (int particleNr = 0; particleNr < numParticles; particleNr++)
 		{
+			const unsigned int i = particleIndices[particleNr];
 			const Vector3r &xi = m_model->getPosition(i);
 			const Real &gradC2_i = getGradC2(i);
 			Vector3r &ai = m_model->getAcceleration(i);
@@ -159,7 +168,6 @@ void SurfaceTension_He2014::step()
 		}
 	}
 }
-
 
 void SurfaceTension_He2014::reset()
 {

@@ -66,10 +66,14 @@ void TimeStep::clearAccelerations(const unsigned int fluidModelIndex)
 {
 	Simulation *sim = Simulation::getCurrent();
 	FluidModel *model = sim->getFluidModel(fluidModelIndex);
-	const unsigned int count = model->numActiveParticles();
 	const Vector3r grav(sim->getVecValue<Real>(Simulation::GRAVITATION));
-	for (unsigned int i=0; i < count; i++)
+
+	const unsigned int* particleIndices = model->getParticleIndices();
+	const int numParticles = (int)model->numActiveParticles();
+
+	for (int particleNr = 0; particleNr < numParticles; particleNr++)
 	{
+		const unsigned int i = particleIndices[particleNr];
 		// Clear accelerations of dynamic particles
 		if (model->getMass(i) != 0.0)
 		{
@@ -85,16 +89,19 @@ void TimeStep::computeDensities(const unsigned int fluidModelIndex)
 {
 	Simulation *sim = Simulation::getCurrent();
 	FluidModel *model = sim->getFluidModel(fluidModelIndex);
-	const Real density0 = model->getDensity0();
-	const unsigned int numParticles = model->numActiveParticles();
-	const unsigned int nFluids = sim->numberOfFluidModels();
-	const unsigned int nBoundaries = sim->numberOfBoundaryModels();
+	const int numParticles = (int)model->numActiveParticles();
 
 	#pragma omp parallel default(shared)
 	{
-		#pragma omp for schedule(static)  
-		for (int i = 0; i < (int) numParticles; i++)
+		const Real density0 = model->getDensity0();
+		const unsigned int nFluids = sim->numberOfFluidModels();
+		const unsigned int nBoundaries = sim->numberOfBoundaryModels();
+		const unsigned int* particleIndices = model->getParticleIndices();
+
+		#pragma omp for schedule(static)
+		for (int particleNr = 0; particleNr < numParticles; particleNr++)
 		{
+			const unsigned int i = particleIndices[particleNr];
 			const Vector3r &xi = model->getPosition(i);
 			Real &density = model->getDensity(i);
 			density = model->getVolume(i) * CubicKernel_AVX::W_zero();
@@ -145,18 +152,21 @@ void TimeStep::computeDensities(const unsigned int fluidModelIndex)
 
 void TimeStep::computeDensities(const unsigned int fluidModelIndex)
 {
-	Simulation *sim = Simulation::getCurrent();
-	FluidModel *model = sim->getFluidModel(fluidModelIndex);
-	const Real density0 = model->getDensity0();
-	const unsigned int numParticles = model->numActiveParticles();
-	const unsigned int nFluids = sim->numberOfFluidModels();
-	const unsigned int nBoundaries = sim->numberOfBoundaryModels();
-	
 	#pragma omp parallel default(shared)
 	{
-		#pragma omp for schedule(static)  
-		for (int i = 0; i < (int) numParticles; i++)
+		Simulation *sim = Simulation::getCurrent();
+		FluidModel *model = sim->getFluidModel(fluidModelIndex);
+		const Real density0 = model->getDensity0();
+		const unsigned int nFluids = sim->numberOfFluidModels();
+		const unsigned int nBoundaries = sim->numberOfBoundaryModels();
+
+		const unsigned int* particleIndices = model->getParticleIndices();
+		const int numParticles = (int)model->numActiveParticles();
+
+		#pragma omp for schedule(static)
+		for (int particleNr = 0; particleNr < numParticles; particleNr++)
 		{
+			const unsigned int i = particleIndices[particleNr];
 			Real &density = model->getDensity(i);
 
 			// Compute current density for particle i
@@ -175,7 +185,7 @@ void TimeStep::computeDensities(const unsigned int fluidModelIndex)
 			//////////////////////////////////////////////////////////////////////////
 			if (sim->getBoundaryHandlingMethod() == BoundaryHandlingMethods::Akinci2012)
 			{
-				forall_boundary_neighbors(				
+				forall_boundary_neighbors(
 					// Boundary: Akinci2012
 					density += bm_neighbor->getVolume(neighborIndex) * sim->W(xi - xj);
 				);
@@ -194,7 +204,7 @@ void TimeStep::computeDensities(const unsigned int fluidModelIndex)
 			}
 
 			density *= density0;
-		}
+		)
 	}
 }
 
@@ -213,13 +223,16 @@ void TimeStep::computeVolumeAndBoundaryX()
 	for (unsigned int fluidModelIndex = 0; fluidModelIndex < nFluids; fluidModelIndex++)
 	{
 		FluidModel *model = sim->getFluidModel(fluidModelIndex);
-		const unsigned int numParticles = model->numActiveParticles();
 
 		#pragma omp parallel default(shared)
 		{
-			#pragma omp for schedule(static)  
-			for (int i = 0; i < (int)numParticles; i++)
+			const unsigned int* particleIndices = model->getParticleIndices();
+			const int numParticles = (int)model->numActiveParticles();
+
+			#pragma omp for schedule(static)
+			for (int particleNr = 0; particleNr < numParticles; particleNr++)
 			{
+				const unsigned int i = particleIndices[particleNr];
 				const Vector3r &xi = model->getPosition(i);
 				computeVolumeAndBoundaryX(fluidModelIndex, i, xi);
 			}
@@ -293,7 +306,7 @@ void TimeStep::computeVolumeAndBoundaryX(const unsigned int fluidModelIndex, con
 			dist = bm->getMap()->interpolate(0, localXi, cell, c0, N);
 #else
 			dist = bm->getMap()->interpolate(0, localXi, cell, c0, N, &normal, &dN);
-#endif		
+#endif
 
 		if (model->getParticleState(i) == ParticleState::Active)
 		{
@@ -315,9 +328,9 @@ void TimeStep::computeVolumeAndBoundaryX(const unsigned int fluidModelIndex, con
 					if (nl > 1.0e-5)
 					{
 						normal /= nl;
-						const Real d = max((static_cast<Real>(dist) + static_cast<Real>(0.5) * particleRadius), static_cast<Real>(2.0)*particleRadius);	
-																								// boundary point is 0.5*particleRadius below the surface. 
-																								// Ensure that the particle is at least one particle diameter away 
+						const Real d = max((static_cast<Real>(dist) + static_cast<Real>(0.5) * particleRadius), static_cast<Real>(2.0)*particleRadius);
+																								// boundary point is 0.5*particleRadius below the surface.
+																								// Ensure that the particle is at least one particle diameter away
 																								// from the boundary X to avoid strong pressure forces.
 						boundaryXj = (xi - d * normal.cast<Real>());
 					}
@@ -346,7 +359,7 @@ void TimeStep::computeVolumeAndBoundaryX(const unsigned int fluidModelIndex, con
 
 		// Animate particles that are in the boundary back to the surface.
 		// Typically this never happens, but this is a fallback solution if
-		// too large time steps are used. 
+		// too large time steps are used.
 		if (model->getParticleState(i) == ParticleState::AnimatedByVM)
 		{
 			if (dist != numeric_limits<double>::max())				// if dist is numeric_limits<double>::max(), then the particle is not close to the current boundary
@@ -373,7 +386,6 @@ void TimeStep::computeVolumeAndBoundaryX(const unsigned int fluidModelIndex, con
 	}
 }
 
-
 void TimeStep::computeDensityAndGradient()
 {
 	START_TIMING("computeDensityAndGradient");
@@ -382,13 +394,16 @@ void TimeStep::computeDensityAndGradient()
 	for (unsigned int fluidModelIndex = 0; fluidModelIndex < nFluids; fluidModelIndex++)
 	{
 		FluidModel *model = sim->getFluidModel(fluidModelIndex);
-		const unsigned int numParticles = model->numActiveParticles();
 
 		#pragma omp parallel default(shared)
 		{
-			#pragma omp for schedule(static)  
-			for (int i = 0; i < (int)numParticles; i++)
+			const unsigned int* particleIndices = model->getParticleIndices();
+			const int numParticles = (int)model->numActiveParticles();
+
+			#pragma omp for schedule(static)
+			for (int particleNr = 0; particleNr < numParticles; particleNr++)
 			{
+				const unsigned int i = particleIndices[particleNr];
 				const Vector3r &xi = model->getPosition(i);
 				computeDensityAndGradient(fluidModelIndex, i, xi);
 			}
@@ -420,8 +435,8 @@ void TimeStep::computeDensityAndGradient(const unsigned int fluidModelIndex, con
 		Eigen::Vector3d normal;
 		const Eigen::Vector3d localXi = (R.transpose() * (xi - t)).cast<double>();
 
-		Vector3r &boundaryXj = bm->getBoundaryXj(fluidModelIndex, i);		
- 		std::array<unsigned int, 32> cell; 
+		Vector3r &boundaryXj = bm->getBoundaryXj(fluidModelIndex, i);
+ 		std::array<unsigned int, 32> cell;
  		Eigen::Vector3d c0;
  		Eigen::Matrix<double, 32, 1> N;
 		Eigen::Matrix<double, 32, 3> dN;
@@ -449,7 +464,7 @@ void TimeStep::computeDensityAndGradient(const unsigned int fluidModelIndex, con
 					approximateNormal(bm->getMap(), localXi, normal, 3);
 #endif
 				boundaryDensityGradient = -R * gradD.cast<Real>();
-				normal = R.cast<double>() * normal;	
+				normal = R.cast<double>() * normal;
 				const double nl = normal.norm();
 				if (nl > 1.0e-6)
 				{
@@ -510,6 +525,7 @@ void TimeStep::precomputeValues()
 		model->get_precomputed_indices_same_phase().clear();
 		model->get_precomputed_V_gradW().clear();
 		const int numParticles = (int)model->numActiveParticles();
+		const unsigned int* particleIndices = model->getParticleIndices();
 
 		auto& precomputed_indices = model->get_precomputed_indices();
 		auto& precomputed_indices_same_phase = model->get_precomputed_indices_same_phase();
@@ -521,8 +537,10 @@ void TimeStep::precomputeValues()
 
 		unsigned int sumNeighborParticles = 0;
 		unsigned int sumNeighborParticlesSamePhase = 0;
-		for (int i = 0; i < numParticles; i++)
+
+		for (int particleNr = 0; particleNr < numParticles; particleNr++)
 		{
+			const unsigned int i = particleIndices[particleNr];
 			for (unsigned int pid = 0; pid < nFluids; pid++)
 			{
 				FluidModel* fm_neighbor = sim->getFluidModelFromPointSet(pid);
@@ -539,16 +557,19 @@ void TimeStep::precomputeValues()
 			}
 			precomputed_indices.push_back(sumNeighborParticles);
 		}
-	
+
 		if (sumNeighborParticles > precomputed_V_gradW.capacity())
 			precomputed_V_gradW.reserve(static_cast<int>(1.5 * sumNeighborParticles));
 		precomputed_V_gradW.resize(sumNeighborParticles);
 
 		#pragma omp parallel default(shared)
 		{
-			#pragma omp for schedule(static) 
-			for (int i = 0; i < (int)numParticles; i++)
+			const unsigned int* particleIndices = model->getParticleIndices();
+
+			#pragma omp for schedule(static)
+			for (int particleNr = 0; particleNr < numParticles; particleNr++)
 			{
+				const unsigned int i = particleIndices[particleNr];
 				const Vector3r& xi = model->getPosition(i);
 				const Vector3f8 xi_avx(xi);
 				unsigned int base = precomputed_indices[i];

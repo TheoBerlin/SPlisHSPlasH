@@ -74,7 +74,7 @@ void Viscosity_Bender2017::step()
 	FluidModel *model = m_model;
 	const unsigned int fluidModelIndex = model->getPointSetIndex();
 	const unsigned int maxIter = m_maxIter;
-	const Real maxError = m_maxError;	
+	const Real maxError = m_maxError;
 	const Real maxError2 = maxError*maxError;
 	const Real density0 = model->getDensity0();
 
@@ -90,9 +90,12 @@ void Viscosity_Bender2017::step()
 		// Compute viscosity constraint value
 		#pragma omp parallel default(shared)
 		{
-			#pragma omp for schedule(static) nowait 
-			for (int i = 0; i < numParticles; i++)
+			const unsigned int* particleIndices = model->getParticleIndices();
+
+			#pragma omp for schedule(static) nowait
+			for (int particleNr = 0; particleNr < numParticles; particleNr++)
 			{
+				const unsigned int i = particleIndices[particleNr];
 				const Vector3r &xi = m_model->getPosition(i);
 				const Vector3r &vi = m_model->getVelocity(i);
 				const Real density_i = m_model->getDensity(i);
@@ -119,34 +122,44 @@ void Viscosity_Bender2017::step()
 				)
 
 				viscosityC = (0.5 / density_i) * viscosityC - getTargetStrainRate(i);
- 
+
 				getViscosityLambda(i) = viscosityC;
 			}
 		}
- 
+
 		Real avgStrainRateError = 0.0;
-		for (int i = 0; i < (int)numParticles; i++)
+		const unsigned int* particleIndices = model->getParticleIndices();
+
+		for (int particleNr = 0; particleNr < numParticles; particleNr++)
+		{
+			const unsigned int i = particleIndices[particleNr];
 			for (unsigned int j = 0; j < 6; j++)
 				avgStrainRateError += fabs(getViscosityLambda(i)[j]);
+		}
 		avgStrainRateError = (static_cast<Real>(1.0) / (static_cast<Real>(6.0) *(Real)numParticles)) * avgStrainRateError;
 
 		// Compute viscosity constraint value
 		#pragma omp parallel default(shared)
 		{
-			#pragma omp for schedule(static) nowait 
-			for (int i = 0; i < (int)numParticles; i++)
+			const unsigned int* particleIndices = model->getParticleIndices();
+
+			#pragma omp for schedule(static) nowait
+			for (int particleNr = 0; particleNr < numParticles; particleNr++)
 			{
+				const unsigned int i = particleIndices[particleNr];
 				getViscosityLambda(i) = -getViscosityFactor(i) * getViscosityLambda(i);
 			}
 		}
 
-		
 		// Apply impulses
 		#pragma omp parallel default(shared)
 		{
-			#pragma omp for schedule(static) nowait 
-			for (int i = 0; i < numParticles; i++)
+			const unsigned int* particleIndices = model->getParticleIndices();
+
+			#pragma omp for schedule(static) nowait
+			for (int particleNr = 0; particleNr < numParticles; particleNr++)
 			{
+				const unsigned int i = particleIndices[particleNr];
 				const Vector3r &xi = m_model->getPosition(i);
 				Vector3r &vi = m_model->getVelocity(i);
 				const Real density_i = m_model->getDensity(i);
@@ -164,15 +177,15 @@ void Viscosity_Bender2017::step()
  					gradT(0,0) = static_cast<Real>(2.0) * gradW[0];
  					gradT(0,3) = gradW[1];
  					gradT(0,4) = gradW[2];
- 
+
  					gradT(1,1) = static_cast<Real>(2.0) * gradW[1];
  					gradT(1,3) = gradW[0];
  					gradT(1,5) = gradW[2];
- 
+
  					gradT(2,2) = static_cast<Real>(2.0) * gradW[2];
  					gradT(2,4) = gradW[0];
  					gradT(2,5) = gradW[1];
- 
+
  					vi -= m_model->getMass(neighborIndex)* 0.5 * gradT * ((m_model->getMass(neighborIndex) / (density_i*density_i)) * getViscosityLambda(i) +
  						(m_model->getMass(neighborIndex) / (density_j*density_j)) * getViscosityLambda(neighborIndex));
 				)
@@ -182,7 +195,7 @@ void Viscosity_Bender2017::step()
 
 		if (avgStrainRateError < maxError)
 			break;
-		
+
 	}
 	INCREASE_COUNTER("Visco iterations", static_cast<Real>(m_iterations));
 
@@ -190,9 +203,12 @@ void Viscosity_Bender2017::step()
 	const Real invH = (static_cast<Real>(1.0) / h);
 	#pragma omp parallel default(shared)
 	{
-		#pragma omp for schedule(static)  
-		for (int i = 0; i < (int)numParticles; i++)
+		const unsigned int* particleIndices = model->getParticleIndices();
+
+		#pragma omp for schedule(static)
+		for (int particleNr = 0; particleNr < numParticles; particleNr++)
 		{
+			const unsigned int i = particleIndices[particleNr];
 			const Vector3r &xi = m_model->getPosition(i);
 			const Vector3r &vi = m_model->getVelocity(i);
 			Vector3r &ai = m_model->getAcceleration(i);
@@ -258,9 +274,12 @@ void Viscosity_Bender2017::computeViscosityFactor()
 		// Compute inverted viscosity matrix
 		//////////////////////////////////////////////////////////////////////////
 
-		#pragma omp for schedule(static)  
-		for (int i = 0; i < numParticles; i++)
+		const unsigned int* particleIndices = model->getParticleIndices();
+
+		#pragma omp for schedule(static)
+		for (int particleNr = 0; particleNr < numParticles; particleNr++)
 		{
+			const unsigned int i = particleIndices[particleNr];
 			//////////////////////////////////////////////////////////////////////////
 			// Compute viscosity matrix
 			//////////////////////////////////////////////////////////////////////////
@@ -269,7 +288,7 @@ void Viscosity_Bender2017::computeViscosityFactor()
 			Matrix6r &Kinv = getViscosityFactor(i);
 			Matrix6r K;
 			K.setZero();
-	
+
 			Eigen::Matrix<Real, 6, 3> grad_i;
 			grad_i.setZero();
 
@@ -305,7 +324,7 @@ void Viscosity_Bender2017::computeViscosityFactor()
 			Matrix6r Klocal;
 			viscoGradientMultTransposeRightOpt((1.0 / m_model->getDensity(i)) * grad_i, grad_i, Klocal);
 			K += Klocal;
-			
+
 			Vector6r Kdiag_inv;
 			for (unsigned l = 0; l < 6; l++)
 			{
@@ -347,13 +366,16 @@ void Viscosity_Bender2017::computeTargetStrainRate()
 	const unsigned int fluidModelIndex = m_model->getPointSetIndex();
 	const unsigned int nFluids = sim->numberOfFluidModels();
 	FluidModel *model = m_model;
-		
+
 	// Compute target strain rate
 	#pragma omp parallel default(shared)
 	{
-		#pragma omp for schedule(static) nowait 
-		for (int i = 0; i < numParticles; i++)
+		const unsigned int* particleIndices = model->getParticleIndices();
+
+		#pragma omp for schedule(static) nowait
+		for (int particleNr = 0; particleNr < numParticles; particleNr++)
 		{
+			const unsigned int i = particleIndices[particleNr];
 			const Vector3r &xi = m_model->getPosition(i);
 			const Vector3r &vi = m_model->getVelocity(i);
 			const Real density_i = m_model->getDensity(i);

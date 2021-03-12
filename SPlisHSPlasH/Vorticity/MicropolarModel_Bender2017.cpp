@@ -56,7 +56,7 @@ void MicropolarModel_Bender2017::initParameters()
 void MicropolarModel_Bender2017::step()
 {
 	Simulation *sim = Simulation::getCurrent();
-	const unsigned int numParticles = m_model->numActiveParticles();
+	const int numParticles = (int)m_model->numActiveParticles();
 	if (numParticles == 0)
 		return;
 
@@ -84,9 +84,12 @@ void MicropolarModel_Bender2017::step()
 
 	#pragma omp parallel default(shared)
 	{
-		#pragma omp for schedule(static)  
-		for (int i = 0; i < (int)numParticles; i++)
+		const unsigned int* particleIndices = model->getParticleIndices();
+
+		#pragma omp for schedule(static)
+		for (int particleNr = 0; particleNr < numParticles; particleNr++)
 		{
+			const unsigned int i = particleIndices[particleNr];
 			const Vector3r &xi = m_model->getPosition(i);
 			const Vector3r &vi = m_model->getVelocity(i);
 			const Vector3r &omegai = m_omega[i];
@@ -101,7 +104,7 @@ void MicropolarModel_Bender2017::step()
 			const Vector3f8 omegai_avx(omegai);
 			const Scalarf8 density_i_avx(density_i);
 			const Scalarf8 nut_density_i(nu_t / density_i);
-			const Scalarf8 nut_density_i_intertiaInverse(nu_t / density_i * m_inertiaInverse);			
+			const Scalarf8 nut_density_i_intertiaInverse(nu_t / density_i * m_inertiaInverse);
 
 
 			Vector3f8 delta_ai_avx;
@@ -127,7 +130,7 @@ void MicropolarModel_Bender2017::step()
 				const Scalarf8 mj_avx = convert_zero(model->getMass(0), count);
 				delta_angAcceli_avx -= omegaij * factor_avx * (Vj_avx / density_j_avx) * CubicKernel_AVX::W(xi_avx - xj_avx);
 
-				// difference curl 
+				// difference curl
 				delta_ai_avx += (omegaij % V_gradW) * (nut_density_i * density0_avx);
 				delta_angAcceli_avx += ((vi_avx - vj_avx) % V_gradW) * (nut_density_i_intertiaInverse * density0_avx);
 			);
@@ -149,8 +152,8 @@ void MicropolarModel_Bender2017::step()
 
 					// XSPH for angular velocity field
 					//delta_angAcceli_avx -= omegaij * factor_avx * (mj_avx / density_i_avx) * CubicKernel_AVX::W(xixj);
-					
-					// difference curl 
+
+					// difference curl
 					const Vector3f8 a = (omegaij % gradW) * (nut_density_i * mj_avx);
 					delta_ai_avx += a;
 					delta_angAcceli_avx += ((vi_avx - vj_avx) % gradW) * (nut_density_i_intertiaInverse * mj_avx);
@@ -167,7 +170,7 @@ void MicropolarModel_Bender2017::step()
 					// XSPH for angular velocity field
 					//angAcceli -= invDt * m_inertiaInverse * zeta * (density0 / density_i) * omegaij * rho;
 
-					// difference curl 
+					// difference curl
 					const Vector3r a = nu_t * density0 / density_i * (omegaij.cross(gradRho));
 					ai += a;
 					angAcceli += nu_t * density0 / density_i * m_inertiaInverse * ((vi - vj).cross(gradRho));
@@ -181,14 +184,14 @@ void MicropolarModel_Bender2017::step()
 					Vector3r vj;
 					bm_neighbor->getPointVelocity(xj, vj);
 					const Vector3r omegaij = omegai;		// ToDo: omega_j
-					
+
 					const Vector3r xij = xi - xj;
 					const Vector3r gradW = sim->gradW(xij);
 
 					// XSPH for angular velocity field
 					//angAcceli -= (invDt * m_inertiaInverse * zeta * (density0 * Vj / density_i) * sim->W(xij)) * omegaij;
 
-					// difference curl 
+					// difference curl
 					const Vector3r a = (nu_t * 1.0 / density_i * density0 * Vj) * (omegaij.cross(gradW));
 					ai += a;
 					angAcceli += (nu_t * 1.0 / density_i * m_inertiaInverse * density0 * Vj) * (vi - vj).cross(gradW);
@@ -210,9 +213,12 @@ void MicropolarModel_Bender2017::step()
 
 	#pragma omp parallel default(shared)
 	{
-		#pragma omp for schedule(static)  
-		for (int i = 0; i < (int)numParticles; i++)
+		const unsigned int* particleIndices = model->getParticleIndices();
+
+		#pragma omp for schedule(static)
+		for (int particleNr = 0; particleNr < numParticles; particleNr++)
 		{
+			const unsigned int i = particleIndices[particleNr];
 			m_omega[i] += dt*m_angularAcceleration[i];
 		}
 	}
@@ -223,7 +229,7 @@ void MicropolarModel_Bender2017::step()
 void MicropolarModel_Bender2017::step()
 {
 	Simulation *sim = Simulation::getCurrent();
-	const unsigned int numParticles = m_model->numActiveParticles();
+	const int numParticles = (int)m_model->numActiveParticles();
 	if (numParticles == 0)
 		return;
 
@@ -248,9 +254,12 @@ void MicropolarModel_Bender2017::step()
 
 	#pragma omp parallel default(shared)
 	{
-		#pragma omp for schedule(static)  
-		for (int i = 0; i < (int)numParticles; i++)
+		const unsigned int* particleIndices = model->getParticleIndices();
+
+		#pragma omp for schedule(static)
+		for (int particleNr = 0; particleNr < numParticles; particleNr++)
 		{
+			const unsigned int i = particleIndices[particleNr];
 			const Vector3r &xi = m_model->getPosition(i);
 			const Vector3r &vi = m_model->getVelocity(i);
 			const Vector3r &omegai = m_omega[i];
@@ -274,11 +283,11 @@ void MicropolarModel_Bender2017::step()
 
  				// XSPH for angular velocity field
  				angAcceli -= invDt * m_inertiaInverse * zeta * (m_model->getMass(neighborIndex) / density_j) * omegaij * sim->W(xij);
-				
+
 				//// Viscosity
 				//angAcceli += d * m_inertiaInverse * zeta * (m_model->getMass(neighborIndex) / density_i) * omegaij.dot(xij) / (xij.squaredNorm() + 0.01*h2) * gradW;
 
- 				// difference curl 
+ 				// difference curl
  				ai += nu_t * 1.0/density_i * m_model->getMass(neighborIndex) * (omegaij.cross(gradW));
  				angAcceli += nu_t * 1.0/density_i * m_inertiaInverse * (m_model->getMass(neighborIndex) * (vi  - vj).cross(gradW));
 			);
@@ -291,19 +300,19 @@ void MicropolarModel_Bender2017::step()
 				forall_boundary_neighbors(
  					const Vector3r &vj = bm_neighbor->getVelocity(neighborIndex);
  					const Vector3r &omegaj = Vector3r::Zero();//m_omega[neighborIndex];
- 
+
  					// Viscosity
  					const Vector3r xij = xi - xj;
  					const Vector3r omegaij = omegai - omegaj;
  					const Vector3r gradW = sim->gradW(xij);
- 
+
  					// XSPH for angular velocity field
  					//angAcceli -= invDt * m_inertiaInverse * zeta * (density0 * bm_neighbor->getVolume(neighborIndex) / density_i) * omegaij * sim->W(xij);
- 
+
  					// Viscosity
 					//angAcceli += d * m_inertiaInverse * zeta * (density0 * bm_neighbor->getVolume(neighborIndex) / density_i) * omegaij.dot(xij) / (xij.squaredNorm() + 0.01*h2) * gradW;
- 
-					// difference curl 
+
+					// difference curl
 					const Vector3r a = nu_t * 1.0 / density_i * density0 * bm_neighbor->getVolume(neighborIndex) * (omegaij.cross(gradW));
 					ai += a;
 					angAcceli += nu_t * 1.0 / density_i * m_inertiaInverse * (density0 * bm_neighbor->getVolume(neighborIndex) * (vi - vj).cross(gradW));
@@ -321,7 +330,7 @@ void MicropolarModel_Bender2017::step()
 // 					// XSPH for angular velocity field
 // 					angAcceli -= invDt * m_inertiaInverse * zeta * (density0 / density_i) * omegaij * rho;
 
-					// difference curl 
+					// difference curl
 					const Vector3r a = nu_t * density0 / density_i * (omegaij.cross(gradRho));
 					ai += a;
 					angAcceli += nu_t * density0 / density_i * m_inertiaInverse * ((vi - vj).cross(gradRho));
@@ -335,14 +344,14 @@ void MicropolarModel_Bender2017::step()
 					Vector3r vj;
 					bm_neighbor->getPointVelocity(xj, vj);
 					const Vector3r &omegaij = omegai;		// ToDo: omega_j
-					
+
 					const Vector3r xij = xi - xj;
 					const Vector3r gradW = sim->gradW(xij);
 
 // 					// XSPH for angular velocity field
 // 					angAcceli -= invDt * m_inertiaInverse * zeta * (density0 * Vj / density_i) * omegaij * sim->W(xij);
 
-					// difference curl 
+					// difference curl
 					const Vector3r a = nu_t * 1.0 / density_i * density0 * Vj * (omegaij.cross(gradW));
 					ai += a;
 					angAcceli += nu_t * 1.0 / density_i * m_inertiaInverse * (density0 * Vj * (vi - vj).cross(gradW));
@@ -356,9 +365,12 @@ void MicropolarModel_Bender2017::step()
 
 	#pragma omp parallel default(shared)
 	{
-		#pragma omp for schedule(static)  
-		for (int i = 0; i < static_cast<int>(numParticles); i++)
+		const unsigned int* particleIndices = model->getParticleIndices();
+
+		#pragma omp for schedule(static)
+		for (int particleNr = 0; particleNr < numParticles; particleNr++)
 		{
+			const unsigned int i = particleIndices[particleNr];
 			m_omega[i] += dt*m_angularAcceleration[i];
 		}
 	}

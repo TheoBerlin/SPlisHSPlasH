@@ -23,7 +23,7 @@ SOFTWARE.
 */
 
 /*
-Find supplementary material here: 
+Find supplementary material here:
 https://github.com/gileoo/MCSurfaceTension2020-Supplemental
 Please get in contact for feedback/support.
 */
@@ -63,7 +63,7 @@ int SurfaceTension_ZorillaRitter2020::CLASS_D = -1;
 int SurfaceTension_ZorillaRitter2020::CLASS_D_OFF = -1;
 int SurfaceTension_ZorillaRitter2020::PCA_NRM_MIX = -1;
 int SurfaceTension_ZorillaRitter2020::PCA_CUR_MIX = -1;
-int SurfaceTension_ZorillaRitter2020::FIX_SAMPLES = -1; 
+int SurfaceTension_ZorillaRitter2020::FIX_SAMPLES = -1;
 int SurfaceTension_ZorillaRitter2020::NEIGH_LIMIT = -1;
 
 int SurfaceTension_ZorillaRitter2020::SAMPLING        = -1;
@@ -118,7 +118,7 @@ void SurfaceTension_ZorillaRitter2020::resizeV20States( size_t N )
 	m_classifier_output.resize(N, 0.0);
 }
 
-SurfaceTension_ZorillaRitter2020::SurfaceTension_ZorillaRitter2020( FluidModel* model ) 
+SurfaceTension_ZorillaRitter2020::SurfaceTension_ZorillaRitter2020( FluidModel* model )
 	: SurfaceTensionBase( model )
 	, m_step_version(StepVersion::V2020)
 	, m_Csd(10000) // 10000 // 36000 // 48000 // 60000
@@ -133,7 +133,7 @@ SurfaceTension_ZorillaRitter2020::SurfaceTension_ZorillaRitter2020( FluidModel* 
 	, m_class_d_off( 2 )
 	, m_pca_N_mix( 0.75 )
 	, m_pca_C_mix( 0.5 )
-	, m_neighs_limit( 16 )	
+	, m_neighs_limit( 16 )
 	, m_CS_smooth_passes( 1 )
 	, m_halton_sampling(RandomMethod::HALTON)
 	, m_normal_mode( NormalMethod::MC )
@@ -259,9 +259,9 @@ bool SurfaceTension_ZorillaRitter2020::classifyParticleConfigurable( double com,
 {
 	double neighborsOnTheLine = m_class_k * com + m_class_d + d_offset; // pre-multiplied
 
-	if (non <= neighborsOnTheLine) 
+	if (non <= neighborsOnTheLine)
 		return true;
-	else 
+	else
 		return false;
 }
 
@@ -295,7 +295,7 @@ void SurfaceTension_ZorillaRitter2020::performNeighborhoodSearchSort()
 
 		d.sort_field(&m_classifier_output[0]);
 	}
-	
+
 }
 
 void SurfaceTension_ZorillaRitter2020::step()
@@ -334,7 +334,7 @@ std::vector<Vector3r> SurfaceTension_ZorillaRitter2020::getSphereSamplesRnd( int
 	return points;
 }
 
-/** Step function used in the first version of the paper 
+/** Step function used in the first version of the paper
  *	https://diglib.eg.org/handle/10.2312/cgvc20191260
 */
 void SurfaceTension_ZorillaRitter2020::stepZorilla()
@@ -356,15 +356,17 @@ void SurfaceTension_ZorillaRitter2020::stepZorilla()
 
 #pragma omp parallel default(shared)
 	{
-#pragma omp for schedule(static)  
-		for (int i = 0; i < (int)numParticles; i++)
+		const unsigned int* particleIndices = model->getParticleIndices();
+
+#pragma omp for schedule(static)
+		for (int particleNr = 0; particleNr < numParticles; particleNr++)
 		{
+			const unsigned int i = particleIndices[particleNr];
 			m_mc_normals[i] = Vector3r::Zero();
 			m_classifier_output[i] = 0;
 
 			Vector3r centerofMasses = Vector3r::Zero();
-			int numberOfNeighbours = sim->numberOfNeighbors(fluidModelIndex, fluidModelIndex, i );
-
+			const int numberOfNeighbours = sim->numberOfNeighbors(fluidModelIndex, fluidModelIndex, i );
 
 			if (numberOfNeighbours == 0)
 				continue;
@@ -418,9 +420,12 @@ void SurfaceTension_ZorillaRitter2020::stepZorilla()
 
 #pragma omp parallel default(shared)
 	{
-#pragma omp for schedule(static)  
-		for (int i = 0; i < (int)numParticles; i++)
+		const unsigned int* particleIndices = model->getParticleIndices();
+
+#pragma omp for schedule(static)
+		for (int particleNr = 0; particleNr < numParticles; particleNr++)
 		{
+			const unsigned int i = particleIndices[particleNr];
 			if (m_mc_normals[i] != Vector3r::Zero())
 			{
 				const Vector3r& xi = m_model->getPosition(i);
@@ -463,7 +468,7 @@ void SurfaceTension_ZorillaRitter2020::stepZorilla()
 
 // -- Helper functions for extended step function
 vector<Vector3r> SurfaceTension_ZorillaRitter2020::getSphereSamplesLookUp(
-	int N, Real supportRadius, int start, 
+	int N, Real supportRadius, int start,
 	const vector<float>& vec3, int mod )
 {
 	vector<Vector3r> points( N );
@@ -510,9 +515,12 @@ void SurfaceTension_ZorillaRitter2020::stepRitter()
 
 #pragma omp parallel default(shared)
 	{
-#pragma omp for schedule(static)  
-		for (int i = 0; i < (int)numParticles; i++)
+		const unsigned int* particleIndices = model->getParticleIndices();
+
+#pragma omp for schedule(static)
+		for (int particleNr = 0; particleNr < numParticles; particleNr++)
 		{
+			const unsigned int i = particleIndices[particleNr];
 			// init or reset arrays
 			m_mc_normals[i] = Vector3r::Zero();
 
@@ -542,12 +550,12 @@ void SurfaceTension_ZorillaRitter2020::stepRitter()
 			forall_fluid_neighbors_in_same_phase(
 				Vector3r xjxi = (xj - xi);
 				centerofMasses += xjxi; )
-			
+
 			centerofMasses /= supportRadius;
 
 			// cache classifier input, could also be recomputed later to avoid caching
 			m_classifier_input[i] = centerofMasses.norm() / static_cast<Real>( numberOfNeighbours );
-			
+
 
 			// -- if it is a surface classified particle
 			if (classifyParticleConfigurable( m_classifier_input[i], numberOfNeighbours )) //EvaluateNetwork also possible
@@ -609,14 +617,17 @@ void SurfaceTension_ZorillaRitter2020::stepRitter()
 	}
 
 	// ################################################################################################
-	// ## second pass, compute normals and curvature and compute PCA normal 
+	// ## second pass, compute normals and curvature and compute PCA normal
 	// ################################################################################################
 
 #pragma omp parallel default(shared)
 	{
-#pragma omp for schedule(static)  
-		for (int i = 0; i < (int)numParticles; i++)
+		const unsigned int* particleIndices = model->getParticleIndices();
+
+#pragma omp for schedule(static)
+		for (int particleNr = 0; particleNr < numParticles; particleNr++)
 		{
+			const unsigned int i = particleIndices[particleNr];
 			if (m_mc_normals[i] != Vector3r::Zero())
 			{
 				const Vector3r& xi = m_model->getPosition( i );
@@ -748,7 +759,7 @@ void SurfaceTension_ZorillaRitter2020::stepRitter()
 						}
 
 						Vector3r minor = Vector3r(pdt_ec(0, 0), pdt_ec(1, 0), pdt_ec(2, 0));
-						
+
 						if (minor.dot(m_mc_normals[i]) < 0.0)
 							m_pca_normals[i] = -1.0 * minor;
 						else
@@ -783,7 +794,7 @@ void SurfaceTension_ZorillaRitter2020::stepRitter()
 	// ################################################################################################
 	// ## third pass, final blending and temporal smoothing
 	// ################################################################################################
-	
+
 	m_CS_smooth_passes = std::max( 1, m_CS_smooth_passes );
 
 	for (int si = 0; si < m_CS_smooth_passes; si++)
@@ -791,9 +802,12 @@ void SurfaceTension_ZorillaRitter2020::stepRitter()
 		// smoothing pass 2 for sphericity
 #pragma omp parallel default(shared)
 		{
-#pragma omp for schedule(static)  
-			for (int i = 0; i < (int)numParticles; i++)
+			const unsigned int* particleIndices = model->getParticleIndices();
+
+#pragma omp for schedule(static)
+			for (int particleNr = 0; particleNr < numParticles; particleNr++)
 			{
+				const unsigned int i = particleIndices[particleNr];
 				if (m_mc_normals[i] != Vector3r::Zero())
 				{
 					int count = 0;
@@ -801,13 +815,13 @@ void SurfaceTension_ZorillaRitter2020::stepRitter()
 
 					const Vector3r& xi = m_model->getPosition( i );
 
-					forall_fluid_neighbors_in_same_phase( 
+					forall_fluid_neighbors_in_same_phase(
 						if (m_mc_normals[neighborIndex] != Vector3r::Zero())
 						{
 							CsCorr += m_pca_curv[neighborIndex];
 							count++;
 						} )
-					
+
 
 					if (count > 0)
 						m_pca_curv_smooth[i] = static_cast<Real>(0.25) * m_pca_curv_smooth[i] + static_cast<Real>(0.75) * CsCorr / static_cast<Real>(count);
@@ -878,7 +892,7 @@ void SurfaceTension_ZorillaRitter2020::stepRitter()
 				}
 				else // non surface particle blend 0.0 curvature
 				{
-					
+
 					if (m_temporal_smoothing)
 						m_final_curvatures[i] = static_cast<Real>(0.95) * m_final_curvatures_old[i];
 					else

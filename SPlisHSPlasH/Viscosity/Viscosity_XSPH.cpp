@@ -38,7 +38,7 @@ void Viscosity_XSPH::step()
 	const unsigned int nFluids = sim->numberOfFluidModels();
 	const unsigned int nBoundaries = sim->numberOfBoundaryModels();
 	const unsigned int fluidModelIndex = m_model->getPointSetIndex();
-	const unsigned int numParticles = m_model->numActiveParticles();
+	const int numParticles = (int)m_model->numActiveParticles();
 	const Real density0 = m_model->getValue<Real>(FluidModel::DENSITY0);
 
 	const Real h = TimeManager::getCurrent()->getTimeStepSize();
@@ -47,9 +47,12 @@ void Viscosity_XSPH::step()
 	// Compute viscosity forces (XSPH)
 	#pragma omp parallel default(shared)
 	{
-		#pragma omp for schedule(static)  
-		for (int i = 0; i < (int)numParticles; i++)
+		const unsigned int* particleIndices = m_model->getParticleIndices();
+
+		#pragma omp for schedule(static)
+		for (int particleNr = 0; particleNr < numParticles; particleNr++)
 		{
+			const unsigned int i = particleIndices[particleNr];
 			const Vector3r &xi = m_model->getPosition(i);
 			const Vector3r &vi = m_model->getVelocity(i);
 			Vector3r &ai = m_model->getAcceleration(i);

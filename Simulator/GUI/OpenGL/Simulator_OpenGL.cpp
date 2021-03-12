@@ -163,7 +163,7 @@ void Simulator_OpenGL::pointShaderEnd(Shader *shader, const bool useTexture)
 	shader->end();
 }
 
-void Simulator_OpenGL::pointRegionShaderBegin(Real particleRadius, const Vector3r* particlePositions, const unsigned int *particleLevels)
+void Simulator_OpenGL::pointRegionShaderBegin(Real particleRadius, const Vector3r* particlePositions, const unsigned int *particleLevels, const unsigned int *particleIsBorder)
 {
 	m_shader_regions.begin();
 
@@ -192,6 +192,9 @@ void Simulator_OpenGL::pointRegionShaderBegin(Real particleRadius, const Vector3
 
 	glEnableVertexAttribArray(1);
 	glVertexAttribIPointer(1, 1, GL_UNSIGNED_INT, 0, particleLevels);
+
+	glEnableVertexAttribArray(2);
+	glVertexAttribIPointer(2, 1, GL_UNSIGNED_INT, 0, particleIsBorder);
 }
 
 void Simulator_OpenGL::pointRegionShaderEnd()
@@ -204,7 +207,7 @@ void Simulator_OpenGL::pointRegionShaderEnd()
 
 void Simulator_OpenGL::renderFluid(FluidModel *model, float *fluidColor,
 	const unsigned int colorMapType, const bool useScalarField, const std::vector<float> &scalarField,
-	const Real renderMinValue, const Real renderMaxValue)
+	const Real renderMinValue, const Real renderMaxValue, bool renderRegionColors)
 {
 	// Draw simulation model
 	Simulation *sim = Simulation::getCurrent();
@@ -227,12 +230,16 @@ void Simulator_OpenGL::renderFluid(FluidModel *model, float *fluidColor,
 
 	if (MiniGL::checkOpenGLVersion(3, 3))
 	{
-		const std::string levelFieldName = "particle levels";
-		const FieldDescription& levelField = model->getField(levelFieldName);
-		if (levelField.name == levelFieldName)
+		if (renderRegionColors)
 		{
+			const FieldDescription& levelField = model->getField("particle levels");
+			const FieldDescription& isBorderField = model->getField("is border");
+
+			const unsigned int *particleLevels = (const unsigned int*)levelField.getFct(0);
+			const unsigned int *particleIsBorder = (const unsigned int*)isBorderField.getFct(0);
+
 			// Render each particle with the color of its regional level
-			pointRegionShaderBegin(particleRadius, &model->getPosition(0), (const unsigned int*)levelField.getFct(0));
+			pointRegionShaderBegin(particleRadius, &model->getPosition(0), particleLevels, particleIsBorder);
 			glDrawArrays(GL_POINTS, 0, model->numActiveParticles());
 			pointRegionShaderEnd();
 		}

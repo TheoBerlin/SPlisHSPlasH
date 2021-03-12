@@ -18,7 +18,8 @@ using namespace SPH;
 using namespace Utilities;
 
 Simulator_GUI_imgui::Simulator_GUI_imgui(SimulatorBase *base) :
-	Simulator_GUI_Base(base)
+	Simulator_GUI_Base(base),
+	m_renderRegionColors(false)
 {
 	m_currentFluidModel = 0;
 }
@@ -127,6 +128,17 @@ void Simulator_GUI_imgui::initImguiParameters()
 			MiniGL::setDrawMode(GL_LINE);
 	};
 	imguiParameters::addParam("Visualization", "", wireframeParam);
+
+	imguiParameters::imguiBoolParameter* regionColorsParam = new imguiParameters::imguiBoolParameter();
+	regionColorsParam->description = "Color each particle using its region's level";
+	regionColorsParam->label = "Render region colors";
+	regionColorsParam->readOnly = false;
+	regionColorsParam->getFct = [this]() -> bool { return m_renderRegionColors; };
+	regionColorsParam->setFct = [this](bool v) {
+		m_renderRegionColors = v;
+		Simulation::getCurrent()->toggleRegionColors(v);
+	};
+	imguiParameters::addParam("Visualization", "", regionColorsParam);
 }
 
 void Simulator_GUI_imgui::createSimulationParameterGUI()
@@ -327,7 +339,7 @@ void Simulator_GUI_imgui::render()
 		if ((field == nullptr) || (base->getScalarField().size() == 0))
 			useScalarField = false;
 		Simulator_OpenGL::renderFluid(model, fluidColor, base->getColorMapType(i),
-			useScalarField, base->getScalarField(), base->getRenderMinValue(i), base->getRenderMaxValue(i));
+			useScalarField, base->getScalarField(), base->getRenderMinValue(i), base->getRenderMaxValue(i), m_renderRegionColors);
 		Simulator_OpenGL::renderSelectedParticles(model, getSelectedParticles(), base->getColorMapType(i),
 			base->getRenderMinValue(i), base->getRenderMaxValue(i));
 	}

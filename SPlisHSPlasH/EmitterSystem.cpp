@@ -10,12 +10,12 @@ using namespace SPH;
 
 
 EmitterSystem::EmitterSystem(FluidModel *model)
-{	
+{
 	m_model = model;
 	m_numReusedParticles = 0;
 	m_numberOfEmittedParticles = 0;
 	m_reuseParticles = false;
-	m_boxMin = Vector3r(-1, -1, -1); 
+	m_boxMin = Vector3r(-1, -1, -1);
 	m_boxMax = Vector3r(1, 1, 1);
 
 	m_reusedParticles.reserve(m_maxParticlesToReusePerStep);
@@ -63,16 +63,19 @@ void EmitterSystem::step()
 	{
 		FluidModel *fm = sim->getFluidModel(m);
 		const unsigned int numParticles = fm->numActiveParticles();
+		const unsigned int* particleIndices = fm->getParticleIndices();
+
 		#pragma omp parallel for schedule(static) default(shared)
-		for (int i = 0; i < (int)numParticles; i++)
+		for (int particleNr = 0; particleNr < numParticles; particleNr++)
 		{
+			const unsigned int i = particleIndices[particleNr];
 			if (fm->getParticleState(i) == ParticleState::AnimatedByEmitter)
 				fm->setParticleState(i, ParticleState::Active);
 		}
 	}
 
 	reuseParticles();
-	unsigned int indexReuse = 0;	
+	unsigned int indexReuse = 0;
 	for (size_t i = 0; i < m_emitters.size(); i++)
 	{
 		unsigned int numEmittedParticles = 0;

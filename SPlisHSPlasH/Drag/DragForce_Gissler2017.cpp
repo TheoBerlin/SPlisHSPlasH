@@ -35,7 +35,7 @@ void DragForce_Gissler2017::step()
 	const unsigned int nFluids = sim->numberOfFluidModels();
 	const unsigned int nBoundaries = sim->numberOfBoundaryModels();
 	FluidModel *model = m_model;
-	const unsigned int numParticles = m_model->numActiveParticles();
+	const int numParticles = (int)m_model->numActiveParticles();
 	if (numParticles == 0)
 		return;
 
@@ -70,12 +70,15 @@ void DragForce_Gissler2017::step()
 
 	const Real n_full = 38;
 	const Real n_full_23 = n_full * 2.0/3.0;
-	
+
 	#pragma omp parallel default(shared)
 	{
-		#pragma omp for schedule(static)  
-		for (int i = 0; i < (int)numParticles; i++)
+		const unsigned int* particleIndices = model->getParticleIndices();
+
+		#pragma omp for schedule(static)
+		for (int particleNr = 0; particleNr < numParticles; particleNr++)
 		{
+			const unsigned int i = particleIndices[particleNr];
 			const Vector3r &vi = m_model->getVelocity(i);
 			Vector3r v_i_rel = va - vi;
 			const Real vi_rel_square = v_i_rel.squaredNorm();
@@ -87,7 +90,7 @@ void DragForce_Gissler2017::step()
 				continue;
 			// Else.
 			v_i_rel_n = v_i_rel_n * (1.0 / vi_rel_norm);
- 
+
 			// Equation (8)
 			const Real y_i_max = std::min(vi_rel_square * y_coeff, static_cast<Real>(1.0));
 
@@ -147,7 +150,7 @@ void DragForce_Gissler2017::step()
 
 			const Vector3f8 xi_avx(xi);
 			const Vector3f8 v_i_rel_n_avx(v_i_rel_n);
-			
+
 			forall_fluid_neighbors_in_same_phase_avx(
 				Vector3f8 xixj = xi_avx - xj_avx;
 				xixj.normalize();
@@ -160,7 +163,7 @@ void DragForce_Gissler2017::step()
 			Real max_v_x = 0.0;
 			for (int k = 0; k < 8; k++)
 				max_v_x = std::max(max_v_x, max_v_x_[k]);
-			
+
 			// Equation (15)
 			const Real w_i = std::max(static_cast<Real>(0.0), std::min(static_cast<Real>(1.0), static_cast<Real>(1.0) - max_v_x));
 
@@ -188,7 +191,7 @@ void DragForce_Gissler2017::step()
 	const unsigned int nFluids = sim->numberOfFluidModels();
 	const unsigned int nBoundaries = sim->numberOfBoundaryModels();
 	FluidModel *model = m_model;
-	const unsigned int numParticles = m_model->numActiveParticles();
+	const int numParticles = (int)m_model->numActiveParticles();
 	if (numParticles == 0)
 		return;
 
@@ -223,12 +226,15 @@ void DragForce_Gissler2017::step()
 
 	const Real n_full = 38;
 	const Real n_full_23 = n_full * 2.0/3.0;
-	
+
 	#pragma omp parallel default(shared)
 	{
-		#pragma omp for schedule(static)  
-		for (int i = 0; i < (int)numParticles; i++)
+		const unsigned int* particleIndices = model->getParticleIndices();
+
+		#pragma omp for schedule(static)
+		for (int particleNr = 0; particleNr < numParticles; particleNr++)
 		{
+			const unsigned int i = particleIndices[particleNr];
 			const Vector3r &vi = m_model->getVelocity(i);
 			Vector3r v_i_rel = va - vi;
 			const Real vi_rel_square = v_i_rel.squaredNorm();
@@ -240,7 +246,7 @@ void DragForce_Gissler2017::step()
 				continue;
 			// Else.
 			v_i_rel_n = v_i_rel_n * (1.0 / vi_rel_norm);
- 
+
 			// Equation (8)
 			const Real y_i_max = std::min(vi_rel_square * y_coeff, static_cast<Real>(1.0));
 
@@ -261,7 +267,7 @@ void DragForce_Gissler2017::step()
 
 			if (sim->getBoundaryHandlingMethod() == BoundaryHandlingMethods::Akinci2012)
 			{
-				for (unsigned int pid = nFluids; pid < sim->numberOfPointSets(); pid++) 
+				for (unsigned int pid = nFluids; pid < sim->numberOfPointSets(); pid++)
 					numNeighbors += sim->numberOfNeighbors(fluidModelIndex, pid, i);
 			}
 			//if (sim->getBoundaryHandlingMethod() == BoundaryHandlingMethods::Koschier2017)

@@ -164,7 +164,7 @@ for (unsigned int pid = 0; pid < nBoundaries; pid++) \
 
 namespace SPH
 {
-	enum class SimulationMethods { WCSPH = 0, PCISPH, PBF, IISPH, DFSPH, PF, NumSimulationMethods };
+	enum class SimulationMethods { WCSPH = 0, PCISPH, PBF, IISPH, DFSPH, PF, ADFSPH, NumSimulationMethods };
 	enum class BoundaryHandlingMethods { Akinci2012 = 0, Koschier2017, Bender2019, NumSimulationMethods };
 
 	/** \brief Class to manage the current simulation time and the time step size.
@@ -211,6 +211,7 @@ namespace SPH
 		static int ENUM_SIMULATION_IISPH;
 		static int ENUM_SIMULATION_DFSPH;
 		static int ENUM_SIMULATION_PF;
+		static int ENUM_SIMULATION_ADFSPH;
 
 		static int BOUNDARY_HANDLING_METHOD;
 		static int ENUM_AKINCI2012;
@@ -317,6 +318,9 @@ namespace SPH
 		void setParticleRadius(Real val);
 		Real getParticleRadius() const { return m_particleRadius; }
 		Real getSupportRadius() const { return m_supportRadius; }
+
+		// If ADFSPH is used, the rendering of regional colors can be toggled
+		void toggleRegionColors(bool enabled);
 
 		/** Update time step size depending on the chosen method.
 		*/

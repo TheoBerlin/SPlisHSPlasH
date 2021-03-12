@@ -8,21 +8,21 @@
 
 namespace SPH
 {
-	/** \brief Base class for the simulation methods. 
+	/** \brief Base class for the simulation methods.
 	*/
 	class TimeStep : public GenParam::ParameterObject
 	{
-	public: 
+	public:
 		static int SOLVER_ITERATIONS;
 		static int MIN_ITERATIONS;
 		static int MAX_ITERATIONS;
 		static int MAX_ERROR;
 
 	protected:
-		unsigned int m_iterations;	
+		unsigned int m_iterations;
 		Real m_maxError;
 		unsigned int m_minIterations;
-		unsigned int m_maxIterations;	
+		unsigned int m_maxIterations;
 
 		/** Clear accelerations and add gravitation.
 		*/

@@ -62,16 +62,19 @@ void Viscosity_Takahashi2015::matrixVecProd(const Real* vec, Real *result, void 
 {
 	Viscosity_Takahashi2015 *visco = (Viscosity_Takahashi2015*)userData;
 	FluidModel *model = visco->getModel();
-	const unsigned int numParticles = model->numActiveParticles();
+	const int numParticles = (int)model->numActiveParticles();
 	const Real h = TimeManager::getCurrent()->getTimeStepSize();
 
 	computeViscosityAcceleration(visco, vec);
 
 	#pragma omp parallel default(shared)
 	{
-		#pragma omp for schedule(static) 
-		for (int i = 0; i < (int)numParticles; i++)
+		const unsigned int* particleIndices = model->getParticleIndices();
+
+		#pragma omp for schedule(static)
+		for (int particleNr = 0; particleNr < numParticles; particleNr++)
 		{
+			const unsigned int i = particleIndices[particleNr];
 			const Vector3r &ai = visco->getAccel(i);
 			result[3*i] = vec[3*i] - h*ai[0];
 			result[3*i+1] = vec[3*i+1] - h*ai[1];
@@ -84,14 +87,17 @@ void Viscosity_Takahashi2015::computeViscosityAcceleration(Viscosity_Takahashi20
 {
 	Simulation *sim = Simulation::getCurrent();
 	FluidModel *model = visco->getModel();
-	const unsigned int numParticles = model->numActiveParticles();
+	const int numParticles = (int)model->numActiveParticles();
 	const unsigned int fluidModelIndex = model->getPointSetIndex();
-	
+
 	#pragma omp parallel default(shared)
 	{
-		#pragma omp for schedule(static) 
-		for (int i = 0; i < (int)numParticles; i++)
+		const unsigned int* particleIndices = model->getParticleIndices();
+
+		#pragma omp for schedule(static)
+		for (int particleNr = 0; particleNr < numParticles; particleNr++)
 		{
+			const unsigned int i = particleIndices[particleNr];
 			const Vector3r &xi = model->getPosition(i);
 			const Vector3r &vi = Eigen::Map<const Vector3r>(&v[3*i]);
 			const Real density_i = model->getDensity(i);
@@ -113,9 +119,10 @@ void Viscosity_Takahashi2015::computeViscosityAcceleration(Viscosity_Takahashi20
 			visco->getViscousStress(i) = visco->m_viscosity * (nablaV + nablaV.transpose());
 		}
 
-		#pragma omp for schedule(static) 
-		for (int i = 0; i < (int)numParticles; i++)
+		#pragma omp for schedule(static)
+		for (int particleNr = 0; particleNr < numParticles; particleNr++)
 		{
+			const unsigned int i = particleIndices[particleNr];
 			const Vector3r &xi = model->getPosition(i);
 			Vector3r &ai = visco->getAccel(i);
 			ai.setZero();
@@ -168,9 +175,12 @@ void Viscosity_Takahashi2015::step()
 	//////////////////////////////////////////////////////////////////////////
 	#pragma omp parallel default(shared)
 	{
-		#pragma omp for schedule(static) nowait 
-		for (int i = 0; i < (int)numParticles; i++)
+		const unsigned int* particleIndices = m_model->getParticleIndices();
+
+		#pragma omp for schedule(static)
+		for (int particleNr = 0; particleNr < numParticles; particleNr++)
 		{
+			const unsigned int i = particleIndices[particleNr];
 			const Vector3r &vi = m_model->getVelocity(i);
 			b[3*i] = vi[0];
 			b[3*i+1] = vi[1];
@@ -179,7 +189,7 @@ void Viscosity_Takahashi2015::step()
 	}
 
 	//////////////////////////////////////////////////////////////////////////
-	// Solve linear system 
+	// Solve linear system
 	//////////////////////////////////////////////////////////////////////////
 	START_TIMING("CG solve");
 	x = m_solver.solve(b);
@@ -189,9 +199,12 @@ void Viscosity_Takahashi2015::step()
 
 	#pragma omp parallel default(shared)
 	{
-		#pragma omp for schedule(static)  
-		for (int i = 0; i < (int)numParticles; i++)
+		const unsigned int* particleIndices = m_model->getParticleIndices();
+
+		#pragma omp for schedule(static)
+		for (int particleNr = 0; particleNr < numParticles; particleNr++)
 		{
+			const unsigned int i = particleIndices[particleNr];
 			Vector3r &ai = m_model->getAcceleration(i);
 			const Vector3r newV(x[3 * i], x[3 * i + 1], x[3 * i + 2]);
 			ai += (1.0 / h) * (newV - m_model->getVelocity(i));
@@ -202,9 +215,12 @@ void Viscosity_Takahashi2015::step()
 	const Real invH = (static_cast<Real>(1.0) / h);
 	#pragma omp parallel default(shared)
 	{
-		#pragma omp for schedule(static)  
-		for (int i = 0; i < (int)numParticles; i++)
+		const unsigned int* particleIndices = m_model->getParticleIndices();
+
+		#pragma omp for schedule(static)
+		for (int particleNr = 0; particleNr < numParticles; particleNr++)
 		{
+			const unsigned int i = particleIndices[particleNr];
 			const Vector3r &xi = m_model->getPosition(i);
 			const Vector3r &vi = m_model->getVelocity(i);
 			Vector3r &ai = m_model->getAcceleration(i);

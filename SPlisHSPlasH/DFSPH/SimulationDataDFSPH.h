@@ -5,8 +5,8 @@
 #include <vector>
 #include "SPlisHSPlasH/FluidModel.h"
 
-namespace SPH 
-{	
+namespace SPH
+{
 	/** \brief Simulation data which is required by the method Divergence-free Smoothed Particle Hydrodynamics introduced
 	* by Bender and Koschier [BK15,BK17].
 	*
@@ -20,7 +20,7 @@ namespace SPH
 			SimulationDataDFSPH();
 			virtual ~SimulationDataDFSPH();
 
-		protected:	
+		protected:
 			/** \brief factor \f$\alpha_i\f$ */
 			std::vector<std::vector<Real>> m_factor;
 			/** \brief stores \f$\kappa\f$ value of last time step for a warm start of the pressure solver */
@@ -44,7 +44,7 @@ namespace SPH
 			*/
 			virtual void reset();
 
-			/** Important: First call m_model->performNeighborhoodSearchSort() 
+			/** Important: First call m_model->performNeighborhoodSearchSort()
 			 * to call the z_sort of the neighborhood search.
 			 */
 			void performNeighborhoodSearchSort();

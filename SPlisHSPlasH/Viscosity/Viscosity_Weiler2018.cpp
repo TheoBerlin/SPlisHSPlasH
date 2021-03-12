@@ -71,7 +71,7 @@ void Viscosity_Weiler2018::matrixVecProd(const Real* vec, Real *result, void *us
 	Simulation *sim = Simulation::getCurrent();
 	Viscosity_Weiler2018 *visco = (Viscosity_Weiler2018*)userData;
 	FluidModel *model = visco->getModel();
-	const unsigned int numParticles = model->numActiveParticles();
+	const int numParticles =(int)model->numActiveParticles();
 	const unsigned int fluidModelIndex = model->getPointSetIndex();
 	const unsigned int nFluids = sim->numberOfFluidModels();
 	const unsigned int nBoundaries = sim->numberOfBoundaryModels();
@@ -92,12 +92,15 @@ void Viscosity_Weiler2018::matrixVecProd(const Real* vec, Real *result, void *us
 	const Scalarf8 d_mub(d * mub);
 	const Scalarf8 h2_001(0.01f*h2);
 	const Scalarf8 density0_avx(density0);
-	
+
 	#pragma omp parallel default(shared)
 	{
-		#pragma omp for schedule(static) 
-		for (int i = 0; i < (int)numParticles; i++)
+		const unsigned int* particleIndices = model->getParticleIndices();
+
+		#pragma omp for schedule(static)
+		for (int particleNr = 0; particleNr < numParticles; particleNr++)
 		{
+			const unsigned int i = particleIndices[particleNr];
 			const Vector3r &xi = model->getPosition(i);
 			Vector3r ai;
 			ai.setZero();
@@ -275,7 +278,7 @@ void Viscosity_Weiler2018::matrixVecProd(const Real* vec, Real *result, void *us
 	Simulation *sim = Simulation::getCurrent();
 	Viscosity_Weiler2018 *visco = (Viscosity_Weiler2018*)userData;
 	FluidModel *model = visco->getModel();
-	const unsigned int numParticles = model->numActiveParticles();
+	const int numParticles = (int)model->numActiveParticles();
 	const unsigned int fluidModelIndex = model->getPointSetIndex();
 	const unsigned int nFluids = sim->numberOfFluidModels();
 	const unsigned int nBoundaries = sim->numberOfBoundaryModels();
@@ -294,9 +297,12 @@ void Viscosity_Weiler2018::matrixVecProd(const Real* vec, Real *result, void *us
 
 	#pragma omp parallel default(shared)
 	{
-		#pragma omp for schedule(static) 
-		for (int i = 0; i < (int)numParticles; i++)
+		const unsigned int* particleIndices = model->getParticleIndices();
+
+		#pragma omp for schedule(static)
+		for (int particleNr = 0; particleNr < numParticles; particleNr++)
 		{
+			const unsigned int i = particleIndices[particleNr];
 			const Vector3r &xi = model->getPosition(i);
 			Vector3r ai;
 			ai.setZero();
@@ -640,7 +646,7 @@ void Viscosity_Weiler2018::diagonalMatrixElement(const unsigned int i, Matrix3r 
 	const Real density_i = model->getDensity(i);
 
 	result.setZero();
-	
+
 	const Vector3r &xi = model->getPosition(i);
 
 	//////////////////////////////////////////////////////////////////////////
@@ -764,7 +770,7 @@ void Viscosity_Weiler2018::diagonalMatrixElement(const unsigned int i, Vector3r 
 	FluidModel *model = visco->getModel();
 
 	const unsigned int nBoundaries = sim->numberOfBoundaryModels();
-	
+
 	const Real h = sim->getSupportRadius();
 	const Real h2 = h*h;
 	const Real dt = TimeManager::getCurrent()->getTimeStepSize();
@@ -929,9 +935,12 @@ void Viscosity_Weiler2018::step()
 	//////////////////////////////////////////////////////////////////////////
 	#pragma omp parallel default(shared)
 	{
-		#pragma omp for schedule(static) nowait 
-		for (int i = 0; i < (int)numParticles; i++)
+		const unsigned int* particleIndices = m_model->getParticleIndices();
+
+		#pragma omp for schedule(static) nowait
+		for (int particleNr = 0; particleNr < numParticles; particleNr++)
 		{
+			const unsigned int i = particleIndices[particleNr];
 			const Vector3r &vi = m_model->getVelocity(i);
 			b[3*i] = vi[0];
 			b[3*i+1] = vi[1];
@@ -945,7 +954,7 @@ void Viscosity_Weiler2018::step()
 	}
 
 	//////////////////////////////////////////////////////////////////////////
-	// Solve linear system 
+	// Solve linear system
 	//////////////////////////////////////////////////////////////////////////
 	START_TIMING("CG solve");
 	x = m_solver.solveWithGuess(b, g);
@@ -955,9 +964,12 @@ void Viscosity_Weiler2018::step()
 
 	#pragma omp parallel default(shared)
 	{
-		#pragma omp for schedule(static)  
-		for (int i = 0; i < (int)numParticles; i++)
+		const unsigned int* particleIndices = m_model->getParticleIndices();
+
+		#pragma omp for schedule(static)
+		for (int particleNr = 0; particleNr < numParticles; particleNr++)
 		{
+			const unsigned int i = particleIndices[particleNr];
 			Vector3r &ai = m_model->getAcceleration(i);
 			const Vector3r newV(x[3 * i], x[3 * i + 1], x[3 * i + 2]);
 			ai += (1.0 / h) * (newV - m_model->getVelocity(i));

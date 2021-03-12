@@ -62,6 +62,7 @@ int Simulation::ENUM_SIMULATION_PBF = -1;
 int Simulation::ENUM_SIMULATION_IISPH = -1;
 int Simulation::ENUM_SIMULATION_DFSPH = -1;
 int Simulation::ENUM_SIMULATION_PF = -1;
+int Simulation::ENUM_SIMULATION_ADFSPH = -1;
 int Simulation::BOUNDARY_HANDLING_METHOD = -1;
 int Simulation::ENUM_AKINCI2012 = -1;
 int Simulation::ENUM_KOSCHIER2017 = -1;
@@ -83,6 +84,9 @@ Simulation::Simulation ()
 	m_timeStep = nullptr;
 	m_simulationMethod = SimulationMethods::NumSimulationMethods;
 	m_simulationMethodChanged = NULL;
+
+	m_currentLevelParticleIndices = nullptr;
+	m_currentLevelParticleCounts = 0;
 
 	m_sim2D = false;
 	m_enableZSort = true;
@@ -253,6 +257,7 @@ void Simulation::initParameters()
 	enumParam->addEnumValue("IISPH", ENUM_SIMULATION_IISPH);
 	enumParam->addEnumValue("DFSPH", ENUM_SIMULATION_DFSPH);
 	enumParam->addEnumValue("Projective Fluids", ENUM_SIMULATION_PF);
+	enumParam->addEnumValue("ADFSPH", ENUM_SIMULATION_ADFSPH);
 
 	BOUNDARY_HANDLING_METHOD = createEnumParameter("boundaryHandlingMethod", "Boundary handling method", &m_boundaryHandlingMethod);
 	setGroup(BOUNDARY_HANDLING_METHOD, "Simulation");
@@ -376,6 +381,12 @@ void Simulation::setKernel(int val)
 		updateBoundaryVolume();
 }
 
+void Simulation::toggleRegionColors(bool enabled)
+{
+	TimeStepADFSPH* ADFSPH = reinterpret_cast<TimeStepADFSPH*>(m_timeStep);
+	ADFSPH->getParticleGrid().toggleRegionColors(enabled);
+}
+
 void Simulation::updateTimeStepSize()
 {
 	if (m_cflMethod == 1)
@@ -479,9 +490,9 @@ void Simulation::computeNonPressureForces()
 	for (unsigned int i = 0; i < numberOfFluidModels(); i++)
 	{
 		FluidModel *fm = getFluidModel(i);
-		fm->computeSurfaceTension();
-		fm->computeViscosity();
-		fm->computeVorticity();
+		fm->computeSurfaceTension();	// density, normals
+		fm->computeViscosity();			// mass, velocity, density, viscosity lambda
+		fm->computeVorticity();			// m_normOmega
 		fm->computeDragForce();
 		fm->computeElasticity();
 	}
@@ -568,12 +579,18 @@ void Simulation::setSimulationMethod(const int val)
 		setValue(Simulation::KERNEL_METHOD, Simulation::ENUM_KERNEL_PRECOMPUTED_CUBIC);
 		setValue(Simulation::GRAD_KERNEL_METHOD, Simulation::ENUM_GRADKERNEL_PRECOMPUTED_CUBIC);
 	}
+	else if (method == SimulationMethods::ADFSPH)
+	{
+		m_timeStep = new TimeStepADFSPH();
+		m_timeStep->init();
+
+		setValue(Simulation::KERNEL_METHOD, Simulation::ENUM_KERNEL_PRECOMPUTED_CUBIC);
+		setValue(Simulation::GRAD_KERNEL_METHOD, Simulation::ENUM_GRADKERNEL_PRECOMPUTED_CUBIC);
+	}
 
 	if (m_simulationMethodChanged != nullptr)
 		m_simulationMethodChanged();
 }
-
-
 
 void Simulation::performNeighborhoodSearch()
 {

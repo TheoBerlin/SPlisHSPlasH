@@ -15,26 +15,26 @@
 
 #ifdef USE_PERFORMANCE_OPTIMIZATION
 	// compute the value xj (empty in the optimized version)
-	#define compute_xj(fm_neighbor, pid) 
+	#define compute_xj(fm_neighbor, pid)
 
 	// compute the value Vj (empty in the optimized version)
 	#define compute_Vj(fm_neighbor)
 
-	// compute the value Vj * gradW 
+	// compute the value Vj * gradW
 	#define compute_Vj_gradW() \
 		const Vector3f8& V_gradW = model->get_precomputed_V_gradW()[model->get_precomputed_indices()[i] + idx];
 
-	// compute the value Vj * gradW 
+	// compute the value Vj * gradW
 	#define compute_Vj_gradW_samephase() \
 		const Vector3f8& V_gradW = model->get_precomputed_V_gradW()[model->get_precomputed_indices_same_phase()[i] + j / 8];
-#else 
+#else
 	// compute the value xj
 	#define compute_xj(fm_neighbor, pid) \
 		const Vector3f8 xj_avx = convertVec_zero(&sim->getNeighborList(fluidModelIndex, pid, i)[j], &fm_neighbor->getPosition(0), count);
 
 	// compute the value Vj
 	#define compute_Vj(fm_neighbor) \
-		const Scalarf8 Vj_avx = convert_zero(fm_neighbor->getVolume(0), count); 
+		const Scalarf8 Vj_avx = convert_zero(fm_neighbor->getVolume(0), count);
 
 	// compute the value Vj * gradW assuming that xj and Vj are already available
 	#define compute_Vj_gradW() \
@@ -46,8 +46,8 @@
 #endif
 
 
-namespace SPH 
-{	
+namespace SPH
+{
 	class TimeStep;
 	class ViscosityBase;
 	class SurfaceTensionBase;
@@ -55,6 +55,7 @@ namespace SPH
 	class DragBase;
 	class ElasticityBase;
 	class EmitterSystem;
+	class FluidModelCopy;
 
 	enum FieldType { Scalar = 0, Vector3, Vector6, Matrix3, Matrix6, UInt };
 	struct FieldDescription
@@ -65,14 +66,14 @@ namespace SPH
 		std::function<void*(const unsigned int)> getFct;
 		bool storeData;
 
-		FieldDescription(const std::string &n, const FieldType &t, 
+		FieldDescription(const std::string &n, const FieldType &t,
 			const std::function<void*(const unsigned int)> &fct, const bool s = false) :
 			name(n), type(t), getFct(fct), storeData(s) { }
 	};
 
 	enum class ParticleState { Active = 0, AnimatedByEmitter, AnimatedByVM };
 
-	/** \brief The fluid model stores the particle and simulation information 
+	/** \brief The fluid model stores the particle and simulation information
 	*/
 	class FluidModel : public GenParam::ParameterObject
 	{
@@ -96,9 +97,16 @@ namespace SPH
 
 			std::string getId() const { return m_id; }
 
+			friend FluidModelCopy;
+
 		protected:
 			std::string m_id;
 			EmitterSystem *m_emitterSystem;
+
+			/*	If regional time stepping is used, this will contain indices to all the particles, ordered by level.
+				numActiveParticles will represent the amount of particles in the currently active levels.
+				If regional time stepping is not used, this will contain indices ordered by size: 0, 1, ..., n. */
+			const unsigned int* m_particleIndices;
 
 			// Mass
 			// If the mass is zero, the particle is static
@@ -150,7 +158,7 @@ namespace SPH
 			/** Resize the arrays containing the particle data.
 			*/
 			virtual void resizeFluidParticles(const unsigned int newSize);
-			
+
 			/** Release the arrays containing the particle data.
 			*/
 			virtual void releaseFluidParticles();
@@ -179,7 +187,10 @@ namespace SPH
 			void performNeighborhoodSearchSort();
 
 			void initModel(const std::string &id, const unsigned int nFluidParticles, Vector3r* fluidParticles, Vector3r* fluidVelocities, const unsigned int nMaxEmitterParticles);
-			
+
+			FORCE_INLINE const unsigned int* getParticleIndices() const					{ return m_particleIndices; }
+			FORCE_INLINE void setParticleIndices(const unsigned int* particleIndices)	{ m_particleIndices = particleIndices; }
+
 			const unsigned int numParticles() const { return static_cast<unsigned int>(m_masses.size()); }
 			unsigned int numActiveParticles() const;
 

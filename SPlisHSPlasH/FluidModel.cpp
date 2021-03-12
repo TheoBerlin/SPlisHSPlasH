@@ -37,7 +37,9 @@ FluidModel::FluidModel() :
 	m_density(),
 	m_particleId(),
 	m_particleState()
-{		
+{
+	m_particleIndices = 0;
+
 	m_density0 = 1000.0;
 	m_pointSetIndex = 0;
 
@@ -217,10 +219,10 @@ void FluidModel::initMasses()
 
 	#pragma omp parallel default(shared)
 	{
-		#pragma omp for schedule(static)  
+		#pragma omp for schedule(static)
 		for (int i = 0; i < nParticles; i++)
 		{
-			setMass(i, m_V * m_density0);						// each particle represents a cube with a side length of r		
+			setMass(i, m_V * m_density0);						// each particle represents a cube with a side length of r
 																// mass is slightly reduced to prevent pressure at the beginning of the simulation
 		}
 	}
@@ -241,6 +243,13 @@ void FluidModel::resizeFluidParticles(const unsigned int newSize)
 
 void FluidModel::releaseFluidParticles()
 {
+	Simulation* sim = Simulation::getCurrent();
+	if (sim->getSimulationMethod() != Simulation::ENUM_SIMULATION_ADFSPH)
+	{
+		delete m_particleIndices;
+		m_particleIndices = nullptr;
+	}
+
 	m_x0.clear();
 	m_x.clear();
 	m_v.clear();
@@ -259,10 +268,20 @@ void FluidModel::initModel(const std::string &id, const unsigned int nFluidParti
 	releaseFluidParticles();
 	resizeFluidParticles(nFluidParticles + nMaxEmitterParticles);
 
+	Simulation* sim = Simulation::getCurrent();
+	if (sim->getSimulationMethod() != Simulation::ENUM_SIMULATION_ADFSPH)
+	{
+		unsigned int* indices = new unsigned int[nFluidParticles + nMaxEmitterParticles];
+		for (unsigned int i = 0; i < (nFluidParticles + nMaxEmitterParticles); i++)
+			indices[i] = i;
+
+		m_particleIndices = indices;
+	}
+
 	// copy fluid positions
 	#pragma omp parallel default(shared)
 	{
-		#pragma omp for schedule(static)  
+		#pragma omp for schedule(static)
 		for (int i = 0; i < (int)nFluidParticles; i++)
 		{
 			getPosition0(i) = fluidParticles[i];
@@ -284,7 +303,7 @@ void FluidModel::initModel(const std::string &id, const unsigned int nFluidParti
 	// initialize masses
 	initMasses();
 
-	// Fluids 
+	// Fluids
 	NeighborhoodSearch *neighborhoodSearch = Simulation::getCurrent()->getNeighborhoodSearch();
 	m_pointSetIndex = neighborhoodSearch->add_point_set(&getPosition(0)[0], nFluidParticles, true, true, true, this);
 
@@ -324,8 +343,8 @@ void FluidModel::performNeighborhoodSearchSort()
 
 void SPH::FluidModel::setDensity0(const Real v)
 {
-	m_density0 = v; 
-	initMasses(); 
+	m_density0 = v;
+	initMasses();
 }
 
 const SPH::FieldDescription & SPH::FluidModel::getField(const std::string &name)
@@ -504,7 +523,7 @@ void FluidModel::setViscosityMethod(const unsigned int val)
 			break;
 		}
 	}
-	
+
 	if (m_viscosity != nullptr)
 		m_viscosity->init();
 

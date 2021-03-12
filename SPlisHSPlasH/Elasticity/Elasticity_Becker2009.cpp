@@ -54,16 +54,19 @@ void Elasticity_Becker2009::initValues()
 	sim->getNeighborhoodSearch()->find_neighbors();
 
 	FluidModel *model = m_model;
-	const unsigned int numParticles = model->numActiveParticles();
+	const int numParticles = (int)model->numActiveParticles();
 	const unsigned int fluidModelIndex = model->getPointSetIndex();
 
 	// Store the neighbors in the reference configurations and
 	// compute the volume of each particle in rest state
 	#pragma omp parallel default(shared)
 	{
-		#pragma omp for schedule(static) 
-		for (int i = 0; i < (int)numParticles; i++)
+		const unsigned int* particleIndices = model->getParticleIndices();
+
+		#pragma omp for schedule(static)
+		for (int particleNr = 0; particleNr < numParticles; particleNr++)
 		{
+			const unsigned int i = particleIndices[particleNr];
 			m_current_to_initial_index[i] = i;
 			m_initial_to_current_index[i] = i;
 
@@ -115,15 +118,18 @@ void Elasticity_Becker2009::performNeighborhoodSearchSort()
 void Elasticity_Becker2009::computeRotations()
 {
 	Simulation *sim = Simulation::getCurrent();
-	const unsigned int numParticles = m_model->numActiveParticles();
+	const int numParticles = (int)m_model->numActiveParticles();
 	const unsigned int fluidModelIndex = m_model->getPointSetIndex();
 	FluidModel *model = m_model;
 
 	#pragma omp parallel default(shared)
 	{
-		#pragma omp for schedule(static)  
-		for (int i = 0; i < (int)numParticles; i++)
+		const unsigned int* particleIndices = model->getParticleIndices();
+
+		#pragma omp for schedule(static)
+		for (int particleNr = 0; particleNr < numParticles; particleNr++)
 		{
+			const unsigned int i = particleIndices[particleNr];
 			const unsigned int i0 = m_current_to_initial_index[i];
 			const Vector3r &xi = m_model->getPosition(i);
 			const Vector3r &xi0 = m_model->getPosition0(i0);
@@ -138,7 +144,7 @@ void Elasticity_Becker2009::computeRotations()
 			for (unsigned int j = 0; j < numNeighbors; j++)
 			{
 				const unsigned int neighborIndex = m_initial_to_current_index[m_initialNeighbors[i0][j]];
-				// get initial neighbor index considering the current particle order 
+				// get initial neighbor index considering the current particle order
 				const unsigned int neighborIndex0 = m_initialNeighbors[i0][j];
 
 				const Vector3r &xj = model->getPosition(neighborIndex);
@@ -162,7 +168,7 @@ void Elasticity_Becker2009::computeRotations()
 void Elasticity_Becker2009::computeStress()
 {
 	Simulation *sim = Simulation::getCurrent();
-	const unsigned int numParticles = m_model->numActiveParticles();
+	const int numParticles = (int)m_model->numActiveParticles();
 	const unsigned int fluidModelIndex = m_model->getPointSetIndex();
 	FluidModel *model = m_model;
 
@@ -176,9 +182,12 @@ void Elasticity_Becker2009::computeStress()
 
 	#pragma omp parallel default(shared)
 	{
-		#pragma omp for schedule(static)  
-		for (int i = 0; i < (int)numParticles; i++)
+		const unsigned int* particleIndices = model->getParticleIndices();
+
+		#pragma omp for schedule(static)
+		for (int particleNr = 0; particleNr < numParticles; particleNr++)
 		{
+			const unsigned int i = particleIndices[particleNr];
 			const unsigned int i0 = m_current_to_initial_index[i];
 			const Vector3r &xi = m_model->getPosition(i);
 			const Vector3r &xi0 = m_model->getPosition0(i0);
@@ -193,7 +202,7 @@ void Elasticity_Becker2009::computeStress()
 			for (unsigned int j = 0; j < numNeighbors; j++)
 			{
 				const unsigned int neighborIndex = m_initial_to_current_index[m_initialNeighbors[i0][j]];
-				// get initial neighbor index considering the current particle order 
+				// get initial neighbor index considering the current particle order
 				const unsigned int neighborIndex0 = m_initialNeighbors[i0][j];
 
 				const Vector3r &xj = model->getPosition(neighborIndex);
@@ -226,15 +235,18 @@ void Elasticity_Becker2009::computeStress()
 void Elasticity_Becker2009::computeForces()
 {
 	Simulation *sim = Simulation::getCurrent();
-	const unsigned int numParticles = m_model->numActiveParticles();
+	const int numParticles = (int)m_model->numActiveParticles();
 	const unsigned int fluidModelIndex = m_model->getPointSetIndex();
 	FluidModel *model = m_model;
 
 	#pragma omp parallel default(shared)
 	{
-		#pragma omp for schedule(static)  
-		for (int i = 0; i < (int)numParticles; i++)
+		const unsigned int* particleIndices = model->getParticleIndices();
+
+		#pragma omp for schedule(static)
+		for (int particleNr = 0; particleNr < numParticles; particleNr++)
 		{
+			const unsigned int i = particleIndices[particleNr];
 			const unsigned int i0 = m_current_to_initial_index[i];
 			const Vector3r &xi0 = m_model->getPosition0(i0);
 
@@ -248,7 +260,7 @@ void Elasticity_Becker2009::computeForces()
 			for (unsigned int j = 0; j < numNeighbors; j++)
 			{
 				const unsigned int neighborIndex = m_initial_to_current_index[m_initialNeighbors[i0][j]];
-				// get initial neighbor index considering the current particle order 
+				// get initial neighbor index considering the current particle order
 				const unsigned int neighborIndex0 = m_initialNeighbors[i0][j];
 
 				const Vector3r &xj0 = m_model->getPosition0(neighborIndex0);
@@ -274,7 +286,7 @@ void Elasticity_Becker2009::computeForces()
 			{
 				//////////////////////////////////////////////////////////////////////////
 				// Ganzenmüller, G.C. 2015. An hourglass control algorithm for Lagrangian
-				// Smooth Particle Hydrodynamics. Computer Methods in Applied Mechanics and 
+				// Smooth Particle Hydrodynamics. Computer Methods in Applied Mechanics and
 				// Engineering 286, 87.106.
 				//////////////////////////////////////////////////////////////////////////
 				Vector3r fi_hg;
@@ -283,7 +295,7 @@ void Elasticity_Becker2009::computeForces()
 				for (unsigned int j = 0; j < numNeighbors; j++)
 				{
 					const unsigned int neighborIndex = m_initial_to_current_index[m_initialNeighbors[i0][j]];
-					// get initial neighbor index considering the current particle order 
+					// get initial neighbor index considering the current particle order
 					const unsigned int neighborIndex0 = m_initialNeighbors[i0][j];
 
 					const Vector3r &xj = model->getPosition(neighborIndex);

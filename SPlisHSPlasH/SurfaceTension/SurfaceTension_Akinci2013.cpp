@@ -34,9 +34,12 @@ void SurfaceTension_Akinci2013::computeNormals()
 	// Compute normals
 	#pragma omp parallel default(shared)
 	{
-		#pragma omp for schedule(static)  
-		for (int i = 0; i < (int)numParticles; i++)
+		const unsigned int* particleIndices = model->getParticleIndices();
+
+		#pragma omp for schedule(static)
+		for (int particleNr = 0; particleNr < numParticles; particleNr++)
 		{
+			const unsigned int i = particleIndices[particleNr];
 			const Vector3r &xi = m_model->getPosition(i);
 			Vector3r &ni = getNormal(i);
 			ni.setZero();
@@ -51,7 +54,6 @@ void SurfaceTension_Akinci2013::computeNormals()
 			ni = supportRadius*ni;
 		}
 	}
-
 }
 
 void SurfaceTension_Akinci2013::step()
@@ -59,7 +61,7 @@ void SurfaceTension_Akinci2013::step()
 	Simulation *sim = Simulation::getCurrent();
 	const Real density0 = m_model->getDensity0();
 	const Real supportRadius = sim->getSupportRadius();
-	const unsigned int numParticles = m_model->numActiveParticles();
+	const int numParticles = (int)m_model->numActiveParticles();
 	const Real k = m_surfaceTension;
 	const Real kb = m_surfaceTensionBoundary;
 	const unsigned int fluidModelIndex = m_model->getPointSetIndex();
@@ -72,9 +74,12 @@ void SurfaceTension_Akinci2013::step()
 	// Compute forces
 	#pragma omp parallel default(shared)
 	{
-		#pragma omp for schedule(static)  
-		for (int i = 0; i < (int)numParticles; i++)
+		const unsigned int* particleIndices = model->getParticleIndices();
+
+		#pragma omp for schedule(static)
+		for (int particleNr = 0; particleNr < numParticles; particleNr++)
 		{
+			const unsigned int i = particleIndices[particleNr];
 			const Vector3r &xi = m_model->getPosition(i);
 			const Vector3r &ni = getNormal(i);
 			const Real &rhoi = m_model->getDensity(i);
@@ -112,7 +117,7 @@ void SurfaceTension_Akinci2013::step()
 			if (sim->getBoundaryHandlingMethod() == BoundaryHandlingMethods::Akinci2012)
 			{
 				forall_boundary_neighbors(
-					// adhesion force					
+					// adhesion force
 					Vector3r xixj = (xi - xj);
 					const Real length2 = xixj.squaredNorm();
 					if (length2 > 1.0e-9)

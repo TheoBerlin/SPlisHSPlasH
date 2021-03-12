@@ -7,6 +7,21 @@
 
 using namespace SPH;
 
+ParticleGrid::~ParticleGrid()
+{
+    Simulation *simulation = Simulation::getCurrent();
+    const unsigned int nModels = simulation->numberOfFluidModels();
+
+    for (unsigned int modelIdx = 0; modelIdx < nModels; modelIdx++)
+    {
+        FluidModel *fluidModel = simulation->getFluidModel(modelIdx);
+        fluidModel->removeFieldByName("particle levels");
+
+        if (!m_isBorder.empty())
+            fluidModel->removeFieldByName("is border");
+    }
+}
+
 void ParticleGrid::init()
 {
     Utilities::SceneLoader::Scene &scene = SceneConfiguration::getCurrent()->getScene();
@@ -20,12 +35,24 @@ void ParticleGrid::init()
     const unsigned int nModels = simulation->numberOfFluidModels();
     m_cellParticlePairs.resize(nModels);
     m_regionBorderLevels.resize(nModels);
+    m_particleIndices.resize(nModels);
+    m_particleLevels.resize(nModels);
     for (unsigned int modelIndex = 0; modelIndex < nModels; modelIndex++)
     {
-        const FluidModel *fluidModel = simulation->getFluidModel(modelIndex);
+        FluidModel *fluidModel = simulation->getFluidModel(modelIndex);
         const unsigned int nParticles = fluidModel->numActiveParticles();
 		m_cellParticlePairs[modelIndex].resize(nParticles);
         m_regionBorderLevels[modelIndex].resize(m_cells[modelIndex].size());
+        m_particleIndices[modelIndex].resize(nParticles);
+
+        m_particleLevels[modelIndex].resize(nParticles);
+        fluidModel->addField({ "particle levels", FieldType::UInt, [this, modelIndex](unsigned int particleIdx) { return &m_particleLevels[modelIndex][particleIdx]; } });
+    }
+
+    for (unsigned int level = 0; level < REGION_LEVELS_COUNT; level++)
+    {
+        m_levelParticleCounts[level].resize(nModels);
+        m_levelUnionsParticleCounts[level].resize(nModels);
     }
 }
 
@@ -35,62 +62,38 @@ void ParticleGrid::determineRegions()
     findCellParticlePairs();
     findMaxVelocity();
     defineCellLevels();
-
-    if (m_regionColorsEnabled)
-    {
-        defineParticleLevels();
-    }
+    defineParticleLevels();
 
     identifyRegionBorders();
+    defineLevelParticleIndices();
 }
 
-void ParticleGrid::simulateLevels()
+void ParticleGrid::toggleRegionColors(bool enabled)
 {
-    m_levels[0].substepsRemaining = 1;
+    Simulation* sim = Simulation::getCurrent();
+    const unsigned int nFluids = sim->numberOfFluidModels();
 
-    for (unsigned int levelIdx = 1; levelIdx < REGION_LEVELS_COUNT; levelIdx++)
+    if (enabled)
     {
-        m_levels[levelIdx].substepsRemaining = m_levels[levelIdx - 1].substepsRemaining * LEVEL_TIMESTEP_MULTIPLIER;
-    }
+        m_isBorder.resize(nFluids);
 
-    // simulateLevel(REGION_LEVELS_COUNT - 1);
-    // std::vector<unsigned int> interp
-}
-
-void ParticleGrid::toggleRegionColorsRendering(bool enabled)
-{
-    m_regionColorsEnabled = enabled;
-
-    if (m_regionColorsEnabled)
-    {
-        Simulation *simulation = Simulation::getCurrent();
-        const unsigned int nModels = simulation->numberOfFluidModels();
-
-        m_particleLevels.resize(nModels);
-
-        for (unsigned int modelIdx = 0; modelIdx < nModels; modelIdx++)
+        for (unsigned int modelIdx = 0; modelIdx < nFluids; modelIdx++)
         {
-            // The actual levels are defined during simulation steps
-            FluidModel *fluidModel = simulation->getFluidModel(modelIdx);
-            m_particleLevels[modelIdx].resize(fluidModel->numActiveParticles());
+            m_isBorder[modelIdx].resize(sim->getFluidModel(modelIdx)->numActiveParticles());
 
-            fluidModel->addField({ "particle levels", FieldType::UInt, [this, modelIdx](unsigned int particleIdx) { return &m_particleLevels[modelIdx][particleIdx]; } });
+            FluidModel* model = sim->getFluidModel(modelIdx);
+            model->addField({ "is border", FieldType::UInt, [this, modelIdx](unsigned int particleIdx) { return &m_isBorder[modelIdx][particleIdx]; } });
         }
     }
     else
     {
-        // Deregister particle level fields
-        Simulation *simulation = Simulation::getCurrent();
-        const unsigned int nModels = simulation->numberOfFluidModels();
+        m_isBorder.clear();
 
-        for (unsigned int modelIdx = 0; modelIdx < nModels; modelIdx++)
+        for (unsigned int modelIdx = 0; modelIdx < nFluids; modelIdx++)
         {
-            // The actual levels are defined during simulation steps
-            FluidModel *fluidModel = simulation->getFluidModel(modelIdx);
-            fluidModel->removeFieldByName("particle levels");
+            FluidModel* model = sim->getFluidModel(modelIdx);
+            model->removeFieldByName("is border");
         }
-
-        m_particleLevels.clear();
     }
 }
 
@@ -303,6 +306,45 @@ void ParticleGrid::defineParticleLevels()
     }
 }
 
+void ParticleGrid::defineLevelParticleIndices()
+{
+    Simulation *simulation = Simulation::getCurrent();
+    const unsigned int numFluidModels = simulation->numberOfFluidModels();
+
+    for (unsigned int modelIdx = 0; modelIdx < numFluidModels; modelIdx++)
+    {
+        // #pragma omp parallel num_threads(2) default(shared)
+        {
+            std::vector<unsigned int> &particleLevels = m_particleLevels[modelIdx];
+            std::vector<unsigned int> &levelParticleIndices = m_particleIndices[modelIdx];
+
+            unsigned int levelIndicesPos = 0;
+
+            // const int threadID = omp_get_thread_num();
+            // if (threadID == 0)
+            for (unsigned int level = 0; level < REGION_LEVELS_COUNT; level++)
+            {
+                std::vector<unsigned int> &levelUnionsParticleCounts = m_levelUnionsParticleCounts[level];
+
+                const unsigned int indicesPosBegin = levelIndicesPos;
+
+                const unsigned int particleCount = particleLevels.size();
+                for (unsigned int particleIdx = 0; particleIdx < particleCount; particleIdx++)
+                {
+                    if (particleLevels[particleIdx] == level)
+                    {
+                        levelParticleIndices[levelIndicesPos++] = particleIdx;
+                    }
+                }
+
+                m_levelParticleCounts[level][modelIdx] = levelIndicesPos - indicesPosBegin;
+                m_levelUnionsParticleCounts[level][modelIdx] = m_levelParticleCounts[level][modelIdx] +
+                    (level > 0 ? m_levelUnionsParticleCounts[level - 1][modelIdx] : 0);
+            }
+        }
+    }
+}
+
 void ParticleGrid::identifyRegionBorders()
 {
     Simulation *simulation = Simulation::getCurrent();
@@ -312,6 +354,12 @@ void ParticleGrid::identifyRegionBorders()
     {
         std::vector<unsigned int> &borderLevels = m_regionBorderLevels[modelIdx];
         std::fill_n(borderLevels.data(), borderLevels.size(), UINT32_MAX);
+
+        if (!m_isBorder.empty())
+        {
+            std::vector<unsigned int>& isBorder = m_isBorder[modelIdx];
+            std::fill_n(isBorder.data(), isBorder.size(), 0);
+        }
     }
 
     for (unsigned int modelIdx = 0; modelIdx < numFluidModels; modelIdx++)
@@ -358,23 +406,23 @@ void ParticleGrid::identifyRegionBorders()
 
                             /*  If the neighboring cell is not empty (of particles) and its level is different, then
                                 this cell is part of a border. */
-                            if (neighborCell.pairIndexBegin != neighborCell.pairIndexEnd && neighborCell.regionLevel != cellLevel)
+                            if (neighborCell.pairIndexBegin != neighborCell.pairIndexEnd && neighborCell.regionLevel < cellLevel)
                             {
                                 borderLevels[cellIdx] = cellLevel;
 
-                                if (m_regionColorsEnabled)
+                                if (!m_isBorder.empty())
                                 {
                                     // Change the color of the cell's particles
                                     unsigned int pairIdx = cell.pairIndexBegin;
                                     const unsigned int pairIdxEnd = cell.pairIndexEnd;
 
-                                    std::vector<unsigned int> &particleLevels = m_particleLevels[modelIdx];
-                                    std::vector<CellParticlePair> &cellParticlePairs = m_cellParticlePairs[modelIdx];
+                                    std::vector<unsigned int>& isBorder = m_isBorder[modelIdx];
+                                    std::vector<CellParticlePair>& cellParticlePairs = m_cellParticlePairs[modelIdx];
 
                                     while (pairIdx < pairIdxEnd)
                                     {
                                         const unsigned int particleIdx = cellParticlePairs[pairIdx++].particleIndex;
-                                        particleLevels[particleIdx] = REGION_LEVELS_COUNT;
+                                        isBorder[particleIdx] = 1;
                                     }
                                 }
 

@@ -39,7 +39,7 @@ void Viscosity_Standard::initParameters()
 void Viscosity_Standard::step()
 {
 	Simulation *sim = Simulation::getCurrent();
-	const unsigned int numParticles = m_model->numActiveParticles();
+	const int numParticles = (int)m_model->numActiveParticles();
 	const Real h = sim->getSupportRadius();
 	const Real h2 = h*h;
 	const Real sphereVolume = static_cast<Real>(4.0 / 3.0 * M_PI) * h2*h;
@@ -59,9 +59,12 @@ void Viscosity_Standard::step()
 
 	#pragma omp parallel default(shared)
 	{
-		#pragma omp for schedule(static)  
-		for (int i = 0; i < (int)numParticles; i++)
+		const unsigned int* particleIndices = model->getParticleIndices();
+
+		#pragma omp for schedule(static)
+		for (int particleNr = 0; particleNr < numParticles; particleNr++)
 		{
+			const unsigned int i = particleIndices[particleNr];
 			const Vector3r &xi = m_model->getPosition(i);
 			const Vector3r &vi = m_model->getVelocity(i);
 			Vector3r &ai = m_model->getAcceleration(i);
@@ -82,7 +85,7 @@ void Viscosity_Standard::step()
 				compute_Vj(model);
 				compute_Vj_gradW_samephase();
  				const Vector3f8 vj_avx = convertVec_zero(&sim->getNeighborList(fluidModelIndex, fluidModelIndex, i)[j], &model->getVelocity(0), count);
- 
+
  				// Viscosity
  				const Scalarf8 density_j_avx = convert_one(&sim->getNeighborList(fluidModelIndex, fluidModelIndex, i)[j], &model->getDensity(0), count);
  				const Vector3f8 xixj = xi_avx - xj_avx;
@@ -118,7 +121,7 @@ void Viscosity_Standard::step()
 							Vector3r t1;
 							Vector3r t2;
 							MathFunctions::getOrthogonalVectors(normal, t1, t2);
-							
+
 							const Real dist = (static_cast<Real>(1.0) - nl / h) * h;
 							//const Real dist = 0.5*h;
 							const Vector3r x1 = xj - t1*dist;
@@ -233,7 +236,7 @@ void Viscosity_Standard::step()
 void Viscosity_Standard::step()
 {
 	Simulation *sim = Simulation::getCurrent();
-	const unsigned int numParticles = m_model->numActiveParticles();
+	const int numParticles = (int)m_model->numActiveParticles();
 	const Real h = sim->getSupportRadius();
 	const Real h2 = h*h;
 	const Real sphereVolume = static_cast<Real>(4.0 / 3.0 * M_PI) * h2*h;
@@ -248,9 +251,12 @@ void Viscosity_Standard::step()
 
 	#pragma omp parallel default(shared)
 	{
-		#pragma omp for schedule(static)  
-		for (int i = 0; i < (int)numParticles; i++)
+		const unsigned int* particleIndices = model->getParticleIndices();
+
+		#pragma omp for schedule(static)
+		for (int particleNr = 0; particleNr < numParticles; particleNr++)
 		{
+			const unsigned int i = particleIndices[particleNr];
 			const Vector3r &xi = m_model->getPosition(i);
 			const Vector3r &vi = m_model->getVelocity(i);
 			Vector3r &ai = m_model->getAcceleration(i);

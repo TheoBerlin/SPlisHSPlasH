@@ -93,7 +93,7 @@ void Elasticity_Peer2018::initValues()
 	// compute the volume of each particle in rest state
 	#pragma omp parallel default(shared)
 	{
-		#pragma omp for schedule(static) 
+		#pragma omp for schedule(static)
 		for (int i = 0; i < (int)numParticles; i++)
 		{
 			m_current_to_initial_index[i] = i;
@@ -122,7 +122,7 @@ void Elasticity_Peer2018::initValues()
 
 void Elasticity_Peer2018::step()
 {
-	const unsigned int numParticles = m_model->numActiveParticles();
+	const int numParticles = (int)m_model->numActiveParticles();
 	if (numParticles == 0)
 		return;
 	const Real dt = TimeManager::getCurrent()->getTimeStepSize();
@@ -145,14 +145,17 @@ void Elasticity_Peer2018::step()
 	computeRHS(b);
 
 	// warmstart
-	#pragma omp parallel for schedule(static) 
-	for (int i = 0; i < (int)numParticles; i++)
+	const unsigned int* particleIndices = m_model->getParticleIndices();
+
+	#pragma omp for schedule(static)
+	for (int particleNr = 0; particleNr < numParticles; particleNr++)
 	{
+		const unsigned int i = particleIndices[particleNr];
 		g.segment<3>(3 * i) = m_model->getVelocity(i) + dt * m_model->getAcceleration(i);
 	}
 
 	//////////////////////////////////////////////////////////////////////////
-	// Solve linear system 
+	// Solve linear system
 	//////////////////////////////////////////////////////////////////////////
 	START_TIMING("Elasticity - CG solve");
 	x = m_solver.solveWithGuess(b, g);
@@ -162,9 +165,12 @@ void Elasticity_Peer2018::step()
 
 	#pragma omp parallel default(shared)
 	{
-		#pragma omp for schedule(static)  
-		for (int i = 0; i < (int)numParticles; i++)
+		const unsigned int* particleIndices = m_model->getParticleIndices();
+
+		#pragma omp for schedule(static)
+		for (int particleNr = 0; particleNr < numParticles; particleNr++)
 		{
+			const unsigned int i = particleIndices[particleNr];
 			Vector3r &ai = m_model->getAcceleration(i);
 			ai += (1.0 / dt) * (x.segment<3>(3 * i) - m_model->getVelocity(i));
 		}
@@ -203,9 +209,12 @@ void Elasticity_Peer2018::computeRotations()
 
 	#pragma omp parallel default(shared)
 	{
-		#pragma omp for schedule(static)  
-		for (int i = 0; i < (int)numParticles; i++)
+		const unsigned int* particleIndices = model->getParticleIndices();
+
+		#pragma omp for schedule(static)
+		for (int particleNr = 0; particleNr < numParticles; particleNr++)
 		{
+			const unsigned int i = particleIndices[particleNr];
 			const unsigned int i0 = m_current_to_initial_index[i];
 			const Vector3r &xi = m_model->getPosition(i);
 			const Vector3r &xi0 = m_model->getPosition0(i0);
@@ -220,7 +229,7 @@ void Elasticity_Peer2018::computeRotations()
 			for (unsigned int j = 0; j < numNeighbors; j++)
 			{
 				const unsigned int neighborIndex = m_initial_to_current_index[m_initialNeighbors[i0][j]];
-				// get initial neighbor index considering the current particle order 
+				// get initial neighbor index considering the current particle order
 				const unsigned int neighborIndex0 = m_initialNeighbors[i0][j];
 
 				const Vector3r &xj = model->getPosition(neighborIndex);
@@ -234,7 +243,7 @@ void Elasticity_Peer2018::computeRotations()
 			if (sim->is2DSimulation())
 				F(2, 2) = 1.0;
 
-//  			Vector3r sigma; 
+//  			Vector3r sigma;
 //  			Matrix3r U, VT;
 //  			MathFunctions::svdWithInversionHandling(F, sigma, U, VT);
 //  			m_rotations[i] = U * VT;
@@ -250,14 +259,17 @@ void Elasticity_Peer2018::computeRotations()
 void Elasticity_Peer2018::computeMatrixL()
 {
 	Simulation *sim = Simulation::getCurrent();
-	const unsigned int numParticles = m_model->numActiveParticles();
+	const int numParticles = (int)m_model->numActiveParticles();
 	const unsigned int fluidModelIndex = m_model->getPointSetIndex();
 
 	#pragma omp parallel default(shared)
 	{
-		#pragma omp for schedule(static)  
-		for (int i = 0; i < (int)numParticles; i++)
+		const unsigned int* particleIndices = m_model->getParticleIndices();
+
+		#pragma omp for schedule(static)
+		for (int particleNr = 0; particleNr < numParticles; particleNr++)
 		{
+			const unsigned int i = particleIndices[particleNr];
 			const unsigned int i0 = m_current_to_initial_index[i];
 			const Vector3r &xi0 = m_model->getPosition0(i0);
 			Matrix3r L;
@@ -271,7 +283,7 @@ void Elasticity_Peer2018::computeMatrixL()
 			for (unsigned int j = 0; j < numNeighbors; j++)
 			{
 				const unsigned int neighborIndex = m_initial_to_current_index[m_initialNeighbors[i0][j]];
-				// get initial neighbor index considering the current particle order 
+				// get initial neighbor index considering the current particle order
 				const unsigned int neighborIndex0 = m_initialNeighbors[i0][j];
 
 				const Vector3r &xj0 = m_model->getPosition0(neighborIndex0);
@@ -301,7 +313,7 @@ void Elasticity_Peer2018::computeMatrixL()
 void Elasticity_Peer2018::computeRHS(VectorXr & rhs)
 {
 	Simulation *sim = Simulation::getCurrent();
-	const unsigned int numParticles = m_model->numActiveParticles();
+	const int numParticles = (int)m_model->numActiveParticles();
 	const unsigned int fluidModelIndex = m_model->getPointSetIndex();
 	FluidModel *model = m_model;
 	const Real dt = TimeManager::getCurrent()->getTimeStepSize();
@@ -311,9 +323,12 @@ void Elasticity_Peer2018::computeRHS(VectorXr & rhs)
 
 	#pragma omp parallel default(shared)
 	{
-		#pragma omp for schedule(static)  
-		for (int i = 0; i < (int)numParticles; i++)
+		const unsigned int* particleIndices = model->getParticleIndices();
+
+		#pragma omp for schedule(static)
+		for (int particleNr = 0; particleNr < numParticles; particleNr++)
 		{
+			const unsigned int i = particleIndices[particleNr];
 			const unsigned int i0 = m_current_to_initial_index[i];
 			const Vector3r &xi = m_model->getPosition(i);
 			const Vector3r &xi0 = m_model->getPosition0(i0);
@@ -323,16 +338,16 @@ void Elasticity_Peer2018::computeRHS(VectorXr & rhs)
  			// compute corotated deformation gradient (Eq. 18)
  			//////////////////////////////////////////////////////////////////////////
 			m_F[i].setZero();
- 
+
   			//////////////////////////////////////////////////////////////////////////
  			// Fluid
  			//////////////////////////////////////////////////////////////////////////
  			for (unsigned int j = 0; j < numNeighbors; j++)
  			{
  				const unsigned int neighborIndex = m_initial_to_current_index[m_initialNeighbors[i0][j]];
- 				// get initial neighbor index considering the current particle order 
+ 				// get initial neighbor index considering the current particle order
  				const unsigned int neighborIndex0 = m_initialNeighbors[i0][j];
- 
+
  				const Vector3r &xj = model->getPosition(neighborIndex);
  				const Vector3r &xj0 = m_model->getPosition0(neighborIndex0);
  				const Vector3r xj_xi = xj - xi;
@@ -369,9 +384,12 @@ void Elasticity_Peer2018::computeRHS(VectorXr & rhs)
 
 	#pragma omp parallel default(shared)
 	{
-		#pragma omp for schedule(static)  
-		for (int i = 0; i < (int)numParticles; i++)
+		const unsigned int* particleIndices = model->getParticleIndices();
+
+		#pragma omp for schedule(static)
+		for (int particleNr = 0; particleNr < numParticles; particleNr++)
 		{
+			const unsigned int i = particleIndices[particleNr];
 			const unsigned int i0 = m_current_to_initial_index[i];
 			const Vector3r &xi0 = m_model->getPosition0(i0);
 			const size_t numNeighbors = m_initialNeighbors[i0].size();
@@ -384,7 +402,7 @@ void Elasticity_Peer2018::computeRHS(VectorXr & rhs)
 			for (unsigned int j = 0; j < numNeighbors; j++)
 			{
 				const unsigned int neighborIndex = m_initial_to_current_index[m_initialNeighbors[i0][j]];
-				// get initial neighbor index considering the current particle order 
+				// get initial neighbor index considering the current particle order
 				const unsigned int neighborIndex0 = m_initialNeighbors[i0][j];
 
 				const Vector3r &xj0 = m_model->getPosition0(neighborIndex0);
@@ -401,7 +419,7 @@ void Elasticity_Peer2018::computeRHS(VectorXr & rhs)
 			{
 				//////////////////////////////////////////////////////////////////////////
 				// Ganzenmüller, G.C. 2015. An hourglass control algorithm for Lagrangian
-				// Smooth Particle Hydrodynamics. Computer Methods in Applied Mechanics and 
+				// Smooth Particle Hydrodynamics. Computer Methods in Applied Mechanics and
 				// Engineering 286, 87.106.
 				//////////////////////////////////////////////////////////////////////////
 				Vector3r fi_hg;
@@ -410,7 +428,7 @@ void Elasticity_Peer2018::computeRHS(VectorXr & rhs)
 				for (unsigned int j = 0; j < numNeighbors; j++)
 				{
 					const unsigned int neighborIndex = m_initial_to_current_index[m_initialNeighbors[i0][j]];
-					// get initial neighbor index considering the current particle order 
+					// get initial neighbor index considering the current particle order
 					const unsigned int neighborIndex0 = m_initialNeighbors[i0][j];
 
 					const Vector3r &xj = model->getPosition(neighborIndex);
@@ -451,7 +469,7 @@ void Elasticity_Peer2018::matrixVecProd(const Real* vec, Real *result, void *use
 	Simulation *sim = Simulation::getCurrent();
 	Elasticity_Peer2018 * elasticity = static_cast<Elasticity_Peer2018*>(userData);
 	FluidModel *model = elasticity->getModel();
-	const unsigned int numParticles = model->numActiveParticles();
+	const int numParticles = (int)model->numActiveParticles();
 	const Real dt = TimeManager::getCurrent()->getTimeStepSize();
 
 	const auto &current_to_initial_index = elasticity->m_current_to_initial_index;
@@ -470,9 +488,12 @@ void Elasticity_Peer2018::matrixVecProd(const Real* vec, Real *result, void *use
 
 	#pragma omp parallel default(shared)
 	{
-		#pragma omp for schedule(static)  
-		for (int i = 0; i < (int)numParticles; i++)
+		const unsigned int* particleIndices = model->getParticleIndices();
+
+		#pragma omp for schedule(static)
+		for (int particleNr = 0; particleNr < numParticles; particleNr++)
 		{
+			const unsigned int i = particleIndices[particleNr];
 			const unsigned int i0 = current_to_initial_index[i];
 			const Vector3r &pi = Eigen::Map<const Vector3r>(&vec[3 * i], 3);
 			const Vector3r &xi0 = model->getPosition0(i0);
@@ -490,9 +511,9 @@ void Elasticity_Peer2018::matrixVecProd(const Real* vec, Real *result, void *use
  			for (unsigned int j = 0; j < numNeighbors; j++)
  			{
  				const unsigned int neighborIndex = initial_to_current_index[initialNeighbors[i0][j]];
- 				// get initial neighbor index considering the current particle order 
+ 				// get initial neighbor index considering the current particle order
  				const unsigned int neighborIndex0 = initialNeighbors[i0][j];
- 
+
  				const Vector3r &pj = Eigen::Map<const Vector3r>(&vec[3 * neighborIndex], 3);
  				const Vector3r &xj0 = model->getPosition0(neighborIndex0);
  				const Vector3r pj_pi = pj - pi;
@@ -501,7 +522,7 @@ void Elasticity_Peer2018::matrixVecProd(const Real* vec, Real *result, void *use
 				nablaU += restVolumes[neighborIndex] * pj_pi * correctedRotatedKernel.transpose();
  			}
 			nablaU *= dt;
- 
+
  			//////////////////////////////////////////////////////////////////////////
  			// compute Cauchy strain: epsilon = 0.5 (nablaU + nablaU^T)
  			//////////////////////////////////////////////////////////////////////////
@@ -527,9 +548,12 @@ void Elasticity_Peer2018::matrixVecProd(const Real* vec, Real *result, void *use
 
 	#pragma omp parallel default(shared)
 	{
-		#pragma omp for schedule(static)  
-		for (int i = 0; i < (int)numParticles; i++)
+		const unsigned int* particleIndices = model->getParticleIndices();
+
+		#pragma omp for schedule(static)
+		for (int particleNr = 0; particleNr < numParticles; particleNr++)
 		{
+			const unsigned int i = particleIndices[particleNr];
 			const unsigned int i0 = current_to_initial_index[i];
 			const Vector3r &xi0 = model->getPosition0(i0);
 			const size_t numNeighbors = initialNeighbors[i0].size();
@@ -542,7 +566,7 @@ void Elasticity_Peer2018::matrixVecProd(const Real* vec, Real *result, void *use
 			for (unsigned int j = 0; j < numNeighbors; j++)
 			{
 				const unsigned int neighborIndex = initial_to_current_index[initialNeighbors[i0][j]];
-				// get initial neighbor index considering the current particle order 
+				// get initial neighbor index considering the current particle order
 				const unsigned int neighborIndex0 = initialNeighbors[i0][j];
 
 				const Vector3r &xj0 = model->getPosition0(neighborIndex0);

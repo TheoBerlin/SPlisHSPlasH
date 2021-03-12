@@ -5,8 +5,8 @@
 #include "../Simulator_GUI_Base.h"
 #include <vector>
 
-namespace SPH 
-{	
+namespace SPH
+{
 	class Simulator_GUI_imgui : public Simulator_GUI_Base
 	{
 		public:
@@ -17,7 +17,8 @@ namespace SPH
 			unsigned int m_currentFluidModel;
 			Vector3r m_oldMousePos;
 			std::vector<std::string> m_colorFieldNames;
-			std::vector<std::vector<unsigned int>> m_selectedParticles;			
+			std::vector<std::vector<unsigned int>> m_selectedParticles;
+			bool m_renderRegionColors;
 
 			std::vector<std::vector<unsigned int>>& getSelectedParticles() { return m_selectedParticles; }
 			void initImgui();
@@ -30,7 +31,7 @@ namespace SPH
 
 			void switchPause();
 			static void switchDrawMode();
-				
+
 			void destroy();
 
 		public:

@@ -20,12 +20,6 @@ namespace SPH
         std::vector<unsigned int> regions;
     };
 
-    struct Region
-    {
-        std::vector<unsigned int> gridCells;
-        std::vector<unsigned int> borderingRegions;
-    };
-
     struct GridCell
     {
         Real maxSpeed;
@@ -40,7 +34,7 @@ namespace SPH
     {
         public:
             ParticleGrid() = default;
-            ~ParticleGrid() = default;
+            ~ParticleGrid();
 
             void init();
 
@@ -50,12 +44,12 @@ namespace SPH
             */
             void determineRegions();
 
-            void simulateLevels();
+            void toggleRegionColors(bool enabled);
 
-            void toggleRegionColorsRendering(bool enabled);
-
-            FORCE_INLINE Real getMaxVelocity() const        { return m_maxVelocity; }
-            FORCE_INLINE bool regionColorsEnabled()    { return m_regionColorsEnabled; }
+            FORCE_INLINE Real getMaxVelocity() const { return m_maxVelocity; }
+            FORCE_INLINE const std::vector<unsigned int> *getLevelParticleIndices() const           { return m_particleIndices.data(); }
+            FORCE_INLINE const unsigned int *getLevelParticleCounts(unsigned int level) const       { return m_levelParticleCounts[level].data(); }
+            FORCE_INLINE const unsigned int *getLevelUnionParticleCounts(unsigned int level) const  { return m_levelUnionsParticleCounts[level].data(); }
 
         private:
             void initGridSizeAndResolution();
@@ -74,6 +68,7 @@ namespace SPH
             // Should only be called before the cell-particle pairs array is sorted
             void defineCellLevels();
             void defineParticleLevels();
+            void defineLevelParticleIndices();
 
             void identifyRegionBorders();
 
@@ -96,22 +91,29 @@ namespace SPH
             // Each particle's level. This is only used for rendering particle region colors, and can be toggled.
             std::vector<std::vector<unsigned int>> m_particleLevels;
 
+            // Particle indices, sorted by regional level
+            std::vector<std::vector<unsigned int>> m_particleIndices;
+            /*  The amount of particles per level. The latter contains the particle count of each level and their
+                sublevels. Eg: unionParticleCount[1] = unionParticleCount[1] + unionParticleCount[0] */
+            std::array<std::vector<unsigned int>, REGION_LEVELS_COUNT> m_levelParticleCounts;
+            std::array<std::vector<unsigned int>, REGION_LEVELS_COUNT> m_levelUnionsParticleCounts;
+
             std::vector<std::vector<GridCell>> m_cells;
 
             /*  One element per cell. If a cell is in a region border, its regional level will be stored. If the cell
                 is not in a border, UINT32_MAX will be stored instead. */
             std::vector<std::vector<unsigned int>> m_regionBorderLevels;
 
+            // 1 signifies that a particle is in a regional border. Used if regional color rendering is enabled.
+            std::vector<std::vector<unsigned int>> m_isBorder;
+
             // Assumes the scene uses unitbox.obj. Each component is a distance to a wall.
             Vector3r m_gridSize = { 1.0f, 1.0f, 1.0f };
 
             std::array<Level, REGION_LEVELS_COUNT> m_levels;
-            std::vector<Region> m_regions;
 
             // The maximum velocity out of every fluid particle
             Real m_maxVelocity = -1.0f;
-
-            bool m_regionColorsEnabled = false;
     };
 }
 

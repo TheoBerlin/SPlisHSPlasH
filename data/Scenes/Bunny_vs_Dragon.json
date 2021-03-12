@@ -2,7 +2,7 @@
 	"Configuration":
 	{
 		"particleRadius": 0.025,
-		"simulationMethod": 4,
+		"simulationMethod": 6,
 		"numberOfStepsPerRenderUpdate": 2,
 		"gravitation": [0,-9.81,0],
 		"cflMethod": 1,

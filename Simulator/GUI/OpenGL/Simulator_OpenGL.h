@@ -33,11 +33,11 @@ namespace SPH
 		static void meshShaderEnd();
 		static void pointShaderBegin(Shader *shader, const Real particleRadius, const float *col, const Real minVal, const Real maxVal, const bool useTexture = false, float const* color_map = nullptr);
 		static void pointShaderEnd(Shader *shader, const bool useTexture = false);
-		static void pointRegionShaderBegin(Real particleRadius, const Vector3r* particlePositions, const unsigned int *particleLevels);
+		static void pointRegionShaderBegin(Real particleRadius, const Vector3r* particlePositions, const unsigned int *particleLevels, const unsigned int *particleIsBorder);
 		static void pointRegionShaderEnd();
 		static void renderFluid(FluidModel *model, float *fluidColor,
 			const unsigned int colorMapType, const bool useScalarField, const std::vector<float>& scalarField,
-			const Real renderMinValue, const Real renderMaxValue);
+			const Real renderMinValue, const Real renderMaxValue, bool renderRegionColors);
 		static void renderSelectedParticles(FluidModel *model, const std::vector<std::vector<unsigned int>>& selectedParticles,
 			const unsigned int colorMapType,
 			const Real renderMinValue, const Real renderMaxValue);

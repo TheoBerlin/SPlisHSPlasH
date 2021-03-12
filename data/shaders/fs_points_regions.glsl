@@ -7,6 +7,7 @@ in block
 {
 	flat vec4 mv_pos;
 	flat uint level;
+	flat uint isBorder;
 }
 In;
 
@@ -36,5 +37,5 @@ void main()
     gl_FragDepth = (depth + 1.0) / 2.0;
 
 	// compute final color
-    out_color = vec4(levelColors[In.level], 1.0);
+    out_color = vec4(levelColors[In.level + In.isBorder], 1.0);
 }

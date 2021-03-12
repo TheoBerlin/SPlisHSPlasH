@@ -164,11 +164,15 @@ set(UTILS_SOURCE_FILES
 	)
 
 set(REGIONAL_TIME_STEP_HEADER_FILES
+	RegionalTimeStep/FluidModelCopy.h
 	RegionalTimeStep/ParticleGrid.h
+	RegionalTimeStep/TimeStepADFSPH.h
 )
 
 set(REGIONAL_TIME_STEP_SOURCE_FILES
+	RegionalTimeStep/FluidModelCopy.cpp
 	RegionalTimeStep/ParticleGrid.cpp
+	RegionalTimeStep/TimeStepADFSPH.cpp
 )
 
 if (USE_THIRD_PARTY_METHODS)
