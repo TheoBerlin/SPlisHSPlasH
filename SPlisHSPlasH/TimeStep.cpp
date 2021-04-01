@@ -272,7 +272,6 @@ void TimeStep::computeVolumeAndBoundaryX(const unsigned int fluidModelIndex, con
 	const bool sim2D = sim->is2DSimulation();
 	const Real supportRadius = sim->getSupportRadius();
 	const Real particleRadius = sim->getParticleRadius();
-	const Real dt = TimeManager::getCurrent()->getTimeStepSize();
 	FluidModel* model = sim->getFluidModel(fluidModelIndex);
 
 	for (unsigned int pid = 0; pid < nBoundaries; pid++)
@@ -543,7 +542,6 @@ void TimeStep::precomputeValues()
 			const unsigned int i = particleIndices[particleNr];
 			for (unsigned int pid = 0; pid < nFluids; pid++)
 			{
-				FluidModel* fm_neighbor = sim->getFluidModelFromPointSet(pid);
 				const unsigned int maxN = sim->numberOfNeighbors(fluidModelIndex, pid, i);
 
 				// same phase
@@ -572,7 +570,7 @@ void TimeStep::precomputeValues()
 				const unsigned int i = particleIndices[particleNr];
 				const Vector3r& xi = model->getPosition(i);
 				const Vector3f8 xi_avx(xi);
-				unsigned int base = precomputed_indices[i];
+				unsigned int base = precomputed_indices[particleNr];
 				unsigned int idx = 0;
 				forall_fluid_neighbors_avx(
 					const Scalarf8 Vj_avx = convert_zero(fm_neighbor->getVolume(0), count);

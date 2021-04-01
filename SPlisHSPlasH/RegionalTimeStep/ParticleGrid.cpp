@@ -60,7 +60,7 @@ void ParticleGrid::determineRegions()
 {
     resetCells();
     findCellParticlePairs();
-    findMaxVelocity();
+    findMaxSpeedSquared();
     defineCellLevels();
     defineParticleLevels();
 
@@ -136,7 +136,7 @@ void ParticleGrid::resetCells()
             for (int cellIdx = 0; cellIdx < fluidModelCells.size(); cellIdx++)
             {
                 GridCell &cell = fluidModelCells[cellIdx];
-                cell.maxSpeed = 0.0f;
+                cell.maxSpeedSquared = 0.0f;
             }
         }
     }
@@ -195,7 +195,7 @@ void ParticleGrid::findCellParticlePairs()
                     const Vector3r &particleAcceleration = fluidModel->getAcceleration(i);
                     const Real particleSpeed = (particleVelocity + particleAcceleration * timeStepSize).squaredNorm();
 
-                    cell.maxSpeed = std::max(particleSpeed, cell.maxSpeed);
+                    cell.maxSpeedSquared = std::max(particleSpeed, cell.maxSpeedSquared);
 				}
 			}
         }
@@ -234,24 +234,20 @@ void ParticleGrid::findCellParticlePairs()
     }
 }
 
-Real ParticleGrid::findMaxVelocity()
+Real ParticleGrid::findMaxSpeedSquared()
 {
-    m_maxVelocity = -1.0f;
+    m_maxSpeedSquared = -1.0f;
 
     for (const std::vector<GridCell> &fluidModelCells : m_cells)
     {
         for (const GridCell &cell : fluidModelCells)
         {
-            m_maxVelocity = std::max(m_maxVelocity, cell.maxSpeed);
+            m_maxSpeedSquared = std::max(m_maxSpeedSquared, cell.maxSpeedSquared);
         }
     }
 
-    return m_maxVelocity;
-}
-
-void ParticleGrid::simulateLevel(unsigned int level)
-{
-    // std::vector<unsigned int> interp
+    printf("Max Speed: %f\n", std::sqrtf(m_maxSpeedSquared));
+    return m_maxSpeedSquared;
 }
 
 void ParticleGrid::defineCellLevels()
@@ -267,7 +263,7 @@ void ParticleGrid::defineCellLevels()
             for (int cellIdx = 0; cellIdx < fluidModelCells.size(); cellIdx++)
             {
                 GridCell &cell = fluidModelCells[cellIdx];
-                cell.regionLevel = unsigned int(std::logf(m_maxVelocity / cell.maxSpeed) / logN);
+                cell.regionLevel = unsigned int(std::logf(m_maxSpeedSquared / cell.maxSpeedSquared) / logN);
                 cell.regionLevel = std::min<unsigned int>(cell.regionLevel, REGION_LEVELS_COUNT - 1);
             }
         }

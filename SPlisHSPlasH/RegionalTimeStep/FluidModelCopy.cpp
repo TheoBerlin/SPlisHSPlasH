@@ -13,36 +13,12 @@ void FluidModelCopy::init(const FluidModel* fluidModel)
 {
     m_id = fluidModel->m_id + " copy";
 
+    const unsigned int numParticles = fluidModel->m_x.size();
+
     releaseFluidParticles();
-    resizeFluidParticles(fluidModel->m_x.size());
-    syncParticleData(fluidModel);
+    resizeFluidParticles(numParticles);
+    copyParticleData(fluidModel);
     copyNonPressureForceMethods(fluidModel);
-}
-
-void FluidModelCopy::syncParticleData(const FluidModel* fluidModel)
-{
-    m_masses = fluidModel->m_masses;
-    m_a = fluidModel->m_a;
-    m_v0 = fluidModel->m_v0;
-    m_x0 = fluidModel->m_x0;
-    m_x = fluidModel->m_x;
-    m_x = fluidModel->m_x;
-    m_v = fluidModel->m_v;
-    m_density = fluidModel->m_density;
-    m_particleId = fluidModel->m_particleId;
-    m_particleState = fluidModel->m_particleState;
-    m_V = fluidModel->m_V;
-
-#ifdef USE_PERFORMANCE_OPTIMIZATION
-    m_precomp_V_gradW = fluidModel->m_precomp_V_gradW;
-    m_precompIndices = fluidModel->m_precompIndices;
-    m_precompIndicesSamePhase = fluidModel->m_precompIndicesSamePhase;
-#endif
-
-    m_density0 = fluidModel->m_density0;
-    m_pointSetIndex = fluidModel->m_pointSetIndex;
-    m_numActiveParticles = fluidModel->m_numActiveParticles;
-    m_numActiveParticles0 = fluidModel->m_numActiveParticles0;
 }
 
 void FluidModelCopy::copyNonPressureForceMethods(const FluidModel* fluidModel)

@@ -44,6 +44,8 @@ namespace SPH
 			*/
 			virtual void reset();
 
+			void copyData(const SimulationDataDFSPH* other, unsigned int modelIdx, const unsigned int* particleIndices, unsigned int particleCount);
+
 			/** Important: First call m_model->performNeighborhoodSearchSort()
 			 * to call the z_sort of the neighborhood search.
 			 */

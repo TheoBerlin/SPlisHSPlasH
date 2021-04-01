@@ -341,6 +341,70 @@ void FluidModel::performNeighborhoodSearchSort()
 		m_elasticity->performNeighborhoodSearchSort();
 }
 
+void SPH::FluidModel::copyParticleData(const FluidModel* fluidModel)
+{
+	m_masses = fluidModel->m_masses;
+	m_a = fluidModel->m_a;
+	m_v0 = fluidModel->m_v0;
+	m_x0 = fluidModel->m_x0;
+	m_x = fluidModel->m_x;
+	m_v = fluidModel->m_v;
+	m_density = fluidModel->m_density;
+	m_particleId = fluidModel->m_particleId;
+	m_particleState = fluidModel->m_particleState;
+
+#ifdef USE_PERFORMANCE_OPTIMIZATION
+	m_precomp_V_gradW = fluidModel->m_precomp_V_gradW;
+	m_precompIndices = fluidModel->m_precompIndices;
+	m_precompIndicesSamePhase = fluidModel->m_precompIndicesSamePhase;
+#endif
+
+    m_V = fluidModel->m_V;
+
+    m_density0 = fluidModel->m_density0;
+    m_pointSetIndex = fluidModel->m_pointSetIndex;
+    m_numActiveParticles = fluidModel->m_numActiveParticles;
+    m_numActiveParticles0 = fluidModel->m_numActiveParticles0;
+}
+
+void SPH::FluidModel::copyParticleData(const FluidModel* fluidModel, const unsigned int* particleIndices, unsigned int numParticles)
+{
+    for (unsigned int particleNr = 0; particleNr < numParticles; particleNr++)
+    {
+        const unsigned int particleIdx = particleIndices[particleNr];
+
+        m_masses[particleIdx] = fluidModel->m_masses[particleIdx];
+        m_a[particleIdx] = fluidModel->m_a[particleIdx];
+        m_v0[particleIdx] = fluidModel->m_v0[particleIdx];
+        m_x0[particleIdx] = fluidModel->m_x0[particleIdx];
+        m_x[particleIdx] = fluidModel->m_x[particleIdx];
+        m_v[particleIdx] = fluidModel->m_v[particleIdx];
+        m_density[particleIdx] = fluidModel->m_density[particleIdx];
+        m_particleId[particleIdx] = fluidModel->m_particleId[particleIdx];
+        m_particleState[particleIdx] = fluidModel->m_particleState[particleIdx];
+    }
+
+    m_V = fluidModel->m_V;
+
+    m_density0 = fluidModel->m_density0;
+    m_pointSetIndex = fluidModel->m_pointSetIndex;
+    m_numActiveParticles = fluidModel->m_numActiveParticles;
+    m_numActiveParticles0 = fluidModel->m_numActiveParticles0;
+
+#ifdef USE_PERFORMANCE_OPTIMIZATION
+	copyPrecomputedParticleData(fluidModel);
+#endif
+}
+
+#ifdef USE_PERFORMANCE_OPTIMIZATION
+void SPH::FluidModel::copyPrecomputedParticleData(const FluidModel* fluidModel)
+{
+        m_precomp_V_gradW = fluidModel->m_precomp_V_gradW;
+        m_precompIndices = fluidModel->m_precompIndices;
+        m_precompIndicesSamePhase = fluidModel->m_precompIndicesSamePhase;
+}
+#endif
+
 void SPH::FluidModel::setDensity0(const Real v)
 {
 	m_density0 = v;

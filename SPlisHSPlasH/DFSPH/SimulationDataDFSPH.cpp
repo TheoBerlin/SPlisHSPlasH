@@ -71,6 +71,19 @@ void SimulationDataDFSPH::reset()
 	}
 }
 
+void SimulationDataDFSPH::copyData(const SimulationDataDFSPH* other, unsigned int modelIdx, const unsigned int* particleIndices, unsigned int particleCount)
+{
+	for (unsigned int particleNr = 0; particleNr < particleCount; particleNr++)
+	{
+		const unsigned int i = particleIndices[particleNr];
+
+		m_factor[modelIdx][i] = other->m_factor[modelIdx][i];
+		m_kappa[modelIdx][i] = other->m_kappa[modelIdx][i];
+		m_kappaV[modelIdx][i] = other->m_kappaV[modelIdx][i];
+		m_density_adv[modelIdx][i] = other->m_density_adv[modelIdx][i];
+	}
+}
+
 void SimulationDataDFSPH::performNeighborhoodSearchSort()
 {
 	Simulation *sim = Simulation::getCurrent();

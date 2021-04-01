@@ -18,6 +18,7 @@ namespace SPH
 	{
 	protected:
 		SimulationDataDFSPH m_simulationData;
+		SimulationDataDFSPH m_simulationDataCopy;
 		ParticleGrid m_particleGrid;
 		unsigned int m_counter;
 		const Real m_eps = static_cast<Real>(1.0e-5);
@@ -34,8 +35,8 @@ namespace SPH
 		void pressureSolveIteration(const unsigned int fluidModelIndex, Real &avg_density_err);
 		void divergenceSolve();
 		void divergenceSolveIteration(const unsigned int fluidModelIndex, Real &avg_density_err);
-		void computeDensityAdv(const unsigned int fluidModelIndex, const unsigned int index, const Real h, const Real density0);
-		void computeDensityChange(const unsigned int fluidModelIndex, const unsigned int index, const Real h);
+		void computeDensityAdv(unsigned int fluidModelIndex, unsigned int particleNr, unsigned int i, Real h, Real density0);
+		void computeDensityChange(unsigned int fluidModelIndex, unsigned int particleNr, unsigned int i, Real h);
 
 #ifdef USE_WARMSTART_V
 		void warmstartDivergenceSolve(const unsigned int fluidModelIndex);
@@ -48,6 +49,8 @@ namespace SPH
 		*/
 		void performNeighborhoodSearch();
 		void stepLevel(unsigned int level, Real dt);
+
+		void setActiveParticles(unsigned int level);
 
 		virtual void emittedParticles(FluidModel *model, const unsigned int startIndex);
 

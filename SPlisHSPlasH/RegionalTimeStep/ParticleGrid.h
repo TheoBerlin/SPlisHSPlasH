@@ -22,7 +22,7 @@ namespace SPH
 
     struct GridCell
     {
-        Real maxSpeed;
+        Real maxSpeedSquared;
         unsigned int regionLevel;
 
         /* Indices for m_cellParticlePairs. These mark the interval for the cell's particles within said array. */
@@ -46,10 +46,11 @@ namespace SPH
 
             void toggleRegionColors(bool enabled);
 
-            FORCE_INLINE Real getMaxVelocity() const { return m_maxVelocity; }
             FORCE_INLINE const std::vector<unsigned int> *getLevelParticleIndices() const           { return m_particleIndices.data(); }
             FORCE_INLINE const unsigned int *getLevelParticleCounts(unsigned int level) const       { return m_levelParticleCounts[level].data(); }
             FORCE_INLINE const unsigned int *getLevelUnionParticleCounts(unsigned int level) const  { return m_levelUnionsParticleCounts[level].data(); }
+            FORCE_INLINE const Vector3f& getGridSize() const { return m_gridSize; }
+            FORCE_INLINE unsigned int getParticleLevel(unsigned int modelIdx, unsigned int particleIdx) const { return m_particleLevels[modelIdx][particleIdx]; }
 
         private:
             void initGridSizeAndResolution();
@@ -59,11 +60,8 @@ namespace SPH
             // Puts particles into cells and finds the max velocity in each cell
             void findCellParticlePairs();
 
-            // Iterates through all grid cells to find the largest velocity. Results are also stored in m_maxVelocity.
-            Real findMaxVelocity();
-
-            // Recursively simulates each level in the simulation
-            void simulateLevel(unsigned int level);
+            // Iterates through all grid cells to find the largest velocity. Results are also stored in m_maxSpeedSquared.
+            Real findMaxSpeedSquared();
 
             // Should only be called before the cell-particle pairs array is sorted
             void defineCellLevels();
@@ -113,7 +111,7 @@ namespace SPH
             std::array<Level, REGION_LEVELS_COUNT> m_levels;
 
             // The maximum velocity out of every fluid particle
-            Real m_maxVelocity = -1.0f;
+            Real m_maxSpeedSquared = -1.0f;
     };
 }
 

@@ -24,9 +24,15 @@
 	#define compute_Vj_gradW() \
 		const Vector3f8& V_gradW = model->get_precomputed_V_gradW()[model->get_precomputed_indices()[i] + idx];
 
+	#define compute_Vj_gradW_adfsph() \
+		const Vector3f8& V_gradW = model->get_precomputed_V_gradW()[model->get_precomputed_indices()[particleNr] + idx];
+
 	// compute the value Vj * gradW
 	#define compute_Vj_gradW_samephase() \
 		const Vector3f8& V_gradW = model->get_precomputed_V_gradW()[model->get_precomputed_indices_same_phase()[i] + j / 8];
+
+	#define compute_Vj_gradW_samephase_adfsph() \
+		const Vector3f8& V_gradW = model->get_precomputed_V_gradW()[model->get_precomputed_indices_same_phase()[particleNr] + j / 8];
 #else
 	// compute the value xj
 	#define compute_xj(fm_neighbor, pid) \
@@ -165,6 +171,13 @@ namespace SPH
 
 
 		public:
+			void copyParticleData(const FluidModel* fluidModel);
+			void copyParticleData(const FluidModel* fluidModel, const unsigned int* particleIndices, unsigned int numParticles);
+
+		#ifdef USE_PERFORMANCE_OPTIMIZATION
+			void copyPrecomputedParticleData(const FluidModel* fluidModel);
+		#endif
+
 			FORCE_INLINE Real getDensity0() const { return m_density0; }
 			void setDensity0(const Real v);
 

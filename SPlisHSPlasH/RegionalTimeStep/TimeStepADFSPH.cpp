@@ -29,6 +29,7 @@ TimeStepADFSPH::TimeStepADFSPH() :
 	m_simulationData()
 {
 	m_simulationData.init();
+	m_simulationDataCopy.init();
 	m_particleGrid.init();
 	m_counter = 0;
 	m_iterationsV = 0;
@@ -96,6 +97,7 @@ void TimeStepADFSPH::initParameters()
 
 void TimeStepADFSPH::step()
 {
+	printf("Stepping...\n");
 	Simulation *sim = Simulation::getCurrent();
 	TimeManager *tm = TimeManager::getCurrent();
 	const unsigned int nModels = sim->numberOfFluidModels();
@@ -108,17 +110,20 @@ void TimeStepADFSPH::step()
 	for (unsigned int fluidModelIndex = 0; fluidModelIndex < nModels; fluidModelIndex++)
 	{
 		FluidModel* model = sim->getFluidModel(fluidModelIndex);
-		model->setParticleIndices(particleIndices[fluidModelIndex].data());
-		model->setNumActiveParticles(particleCounts[fluidModelIndex]);
+		FluidModelCopy* modelCopy = m_fluidModelCopies[fluidModelIndex];
+
+		const unsigned int* modelParticleIndices = particleIndices[fluidModelIndex].data();
+		const unsigned int numActiveParticles = particleCounts[fluidModelIndex];
+
+		model->setParticleIndices(modelParticleIndices);
+		model->setNumActiveParticles(numActiveParticles);
+
+		modelCopy->setParticleIndices(modelParticleIndices);
+		modelCopy->setNumActiveParticles(numActiveParticles);
 	}
 
-	// Move these inside level loop?
-	performNeighborhoodSearch();
-#ifdef USE_PERFORMANCE_OPTIMIZATION
-	precomputeValues();
-#endif
-
-	const Real globalTimeStepSize = tm->getTimeStepSize() * std::pow(LEVEL_TIMESTEP_MULTIPLIER, REGION_LEVELS_COUNT);
+	const Real globalTimeStepSize = tm->getTimeStepSize() * std::pow(LEVEL_TIMESTEP_MULTIPLIER, REGION_LEVELS_COUNT - 1);
+	printf("Time step: %f\n", globalTimeStepSize);
 
 	checkVelocities();
 	stepLevel(REGION_LEVELS_COUNT - 1, globalTimeStepSize);
@@ -128,7 +133,7 @@ void TimeStepADFSPH::step()
 	sim->animateParticles();
 
 	// Compute new time
-	tm->setTimeStepSize(globalTimeStepSize);
+	// tm->setTimeStepSize(globalTimeStepSize);
 	tm->setTime(tm->getTime() + globalTimeStepSize);
 }
 
@@ -164,7 +169,7 @@ void TimeStepADFSPH::pressureSolve()
 			for (int particleNr = 0; particleNr < numParticles; particleNr++)
 			{
 				const unsigned int i = particleIndices[particleNr];
-				computeDensityAdv(fluidModelIndex, i, h, density0);
+				computeDensityAdv(fluidModelIndex, particleNr, i, h, density0);
 				m_simulationData.getFactor(fluidModelIndex, i) *= invH2;
 //#ifdef USE_WARMSTART
 //				m_simulationData.getKappa(fluidModelIndex, i) = 0.0;
@@ -255,7 +260,7 @@ void TimeStepADFSPH::divergenceSolve()
 			for (int particleNr = 0; particleNr < numParticles; particleNr++)
 			{
 				const unsigned int i = particleIndices[particleNr];
-				computeDensityChange(fluidModelIndex, i, h);
+				computeDensityChange(fluidModelIndex, particleNr, i, h);
 				m_simulationData.getFactor(fluidModelIndex, i) *= invH;
 
 //#ifdef USE_WARMSTART_V
@@ -328,19 +333,35 @@ void TimeStepADFSPH::divergenceSolve()
 void TimeStepADFSPH::checkVelocities()
 {
 	Simulation *sim = Simulation::getCurrent();
+	TimeManager *tm = TimeManager::getCurrent();
+
+	const Real dt = tm->getTimeStepSize();
+	const Vector3f particleBounds = m_particleGrid.getGridSize();
+
  	const unsigned int nFluids = sim->numberOfFluidModels();
 
 	for (unsigned int modelIdx = 0; modelIdx < nFluids; modelIdx++)
 	{
  		FluidModel *model = sim->getFluidModel(modelIdx);
+		const unsigned int* particleIndices = model->getParticleIndices();
 		const unsigned int nParticles = model->numActiveParticles();
-		for (unsigned int i = 0; i < nParticles; i++)
+		for (unsigned int particleNr = 0; particleNr < nParticles; particleNr++)
 		{
-			const Vector3r velocity = model->getVelocity(i);
-			const float size = std::sqrtf(velocity.dot(velocity));
-			if (size > 100.0f)
+			const unsigned int i = particleIndices[particleNr];
+			if (model->getParticleState(i) == ParticleState::Active)
 			{
-				int a = 0;
+				const Vector3r& position = model->getPosition(i);
+				const Vector3r& velocity = model->getVelocity(i);
+
+				const Vector3f newPos = (position + velocity * dt).cwiseAbs();
+				if (newPos.x() > particleBounds.x() || newPos.y() > particleBounds.y() || newPos.z() > particleBounds.z())
+				{
+					int a = 0;
+				}
+				if (velocity.norm() > 10.0f)
+				{
+					int a = 0;
+				}
 			}
 		}
 	}
@@ -391,7 +412,7 @@ void TimeStepADFSPH::checkVelocities()
 			forall_fluid_neighbors_avx_nox(
 				compute_xj(fm_neighbor, pid);
 				compute_Vj(fm_neighbor);
-				compute_Vj_gradW();
+				compute_Vj_gradW_adfsph();
 				const Vector3f8 &gradC_j = V_gradW;
  				sum_grad_p_k_avx += gradC_j.squaredNorm();
  				grad_p_i_avx += gradC_j;
@@ -476,7 +497,7 @@ void TimeStepADFSPH::warmstartPressureSolve(const unsigned int fluidModelIndex)
 		{
 			const unsigned int i = particleIndices[particleNr];
 			//m_simulationData.getKappa(fluidModelIndex, i) = max(m_simulationData.getKappa(fluidModelIndex, i)*invH2, -static_cast<Real>(0.5) * density0*density0);
-			computeDensityAdv(fluidModelIndex, i, h, density0);
+			computeDensityAdv(fluidModelIndex, particleNr, i, h, density0);
 			if (m_simulationData.getDensityAdv(fluidModelIndex, i) > 1.0)
 				m_simulationData.getKappa(fluidModelIndex, i) = static_cast<Real>(0.5) * max(m_simulationData.getKappa(fluidModelIndex, i), static_cast<Real>(-0.00025)) * invH2;
 			else
@@ -514,7 +535,7 @@ void TimeStepADFSPH::warmstartPressureSolve(const unsigned int fluidModelIndex)
 				forall_fluid_neighbors_avx_nox(
 					compute_xj(fm_neighbor, pid);
 					compute_Vj(fm_neighbor);
-					compute_Vj_gradW();
+					compute_Vj_gradW_adfsph();
 					const Scalarf8 densityFrac_avx(fm_neighbor->getDensity0() / density0);
 					const Scalarf8 kj_avx = convert_zero(&sim->getNeighborList(fluidModelIndex, pid, i)[j], &m_simulationData.getKappa(pid, 0), count);
 					const Scalarf8 kSum_avx = ki_avx + densityFrac_avx * kj_avx;
@@ -626,7 +647,7 @@ void TimeStepADFSPH::pressureSolveIteration(const unsigned int fluidModelIndex, 
 			forall_fluid_neighbors_avx_nox(
 				compute_xj(fm_neighbor, pid);
 				compute_Vj(fm_neighbor);
-				compute_Vj_gradW();
+				compute_Vj_gradW_adfsph();
 				const Scalarf8 densityFrac_avx(fm_neighbor->getDensity0() / density0);
 				const Scalarf8 densityAdvj_avx = convert_zero(&sim->getNeighborList(fluidModelIndex, pid, i)[j], &m_simulationData.getDensityAdv(pid, 0), count);
 				const Scalarf8 factorj_avx = convert_zero(&sim->getNeighborList(fluidModelIndex, pid, i)[j], &m_simulationData.getFactor(pid, 0), count);
@@ -692,7 +713,7 @@ void TimeStepADFSPH::pressureSolveIteration(const unsigned int fluidModelIndex, 
 		for (int particleNr = 0; particleNr < numParticles; particleNr++)
 		{
 			const unsigned int i = particleIndices[particleNr];
-			computeDensityAdv(fluidModelIndex, i, h, density0);
+			computeDensityAdv(fluidModelIndex, particleNr, i, h, density0);
 
 			density_error += m_simulationData.getDensityAdv(fluidModelIndex, i) - static_cast<Real>(1.0);
 		}
@@ -730,7 +751,7 @@ void TimeStepADFSPH::warmstartDivergenceSolve(const unsigned int fluidModelIndex
 		for (int particleNr = 0; particleNr < numParticles; particleNr++)
 		{
 			const unsigned int i = particleIndices[particleNr];
-			computeDensityChange(fluidModelIndex, i, h);
+			computeDensityChange(fluidModelIndex, particleNr, i, h);
 			if (m_simulationData.getDensityAdv(fluidModelIndex, i) > 0.0)
 				m_simulationData.getKappaV(fluidModelIndex, i) = static_cast<Real>(0.5) * max(m_simulationData.getKappaV(fluidModelIndex, i), static_cast<Real>(-0.5)) * invH;
 			else
@@ -747,7 +768,7 @@ void TimeStepADFSPH::warmstartDivergenceSolve(const unsigned int fluidModelIndex
 				continue;
 			}
 
-			//if (m_simulationData.getDensityAdv(fluidModelIndex, i) > 0.0)
+			// if (m_simulationData.getDensityAdv(fluidModelIndex, i) > 0.0)
 			{
 				const Real ki = m_simulationData.getKappaV(fluidModelIndex, i);
 				const Vector3r &xi = model->getPosition(i);
@@ -764,9 +785,9 @@ void TimeStepADFSPH::warmstartDivergenceSolve(const unsigned int fluidModelIndex
 				forall_fluid_neighbors_avx_nox(
 					compute_xj(fm_neighbor, pid);
 					compute_Vj(fm_neighbor);
-					compute_Vj_gradW();
+					compute_Vj_gradW_adfsph();
 					const Scalarf8 densityFrac_avx(fm_neighbor->getDensity0() / density0);
-					const Scalarf8 kj_avx = convert_zero(&sim->getNeighborList(fluidModelIndex, pid, i)[j], &m_simulationData.getKappaV(pid, 0), count);;
+					const Scalarf8 kj_avx = convert_zero(&sim->getNeighborList(fluidModelIndex, pid, i)[j], &m_simulationData.getKappaV(pid, 0), count);
 					const Scalarf8 kSum_avx = ki_avx + densityFrac_avx * kj_avx;
 
 					// Directly update velocities instead of storing pressure accelerations
@@ -875,7 +896,7 @@ void TimeStepADFSPH::divergenceSolveIteration(const unsigned int fluidModelIndex
 			forall_fluid_neighbors_avx_nox(
 				compute_xj(fm_neighbor, pid);
 				compute_Vj(fm_neighbor);
-				compute_Vj_gradW();
+				compute_Vj_gradW_adfsph();
 				const Scalarf8 densityFrac_avx(fm_neighbor->getDensity0() / density0);
 				const Scalarf8 densityAdvj_avx = convert_zero(&sim->getNeighborList(fluidModelIndex, pid, i)[j], &m_simulationData.getDensityAdv(pid, 0), count);
 				const Scalarf8 factorj_avx = convert_zero(&sim->getNeighborList(fluidModelIndex, pid, i)[j], &m_simulationData.getFactor(pid, 0), count);
@@ -911,31 +932,25 @@ void TimeStepADFSPH::divergenceSolveIteration(const unsigned int fluidModelIndex
 			vi[1] += delta_vi.y().reduce();
 			vi[2] += delta_vi.z().reduce();
 
-			const float size = std::sqrtf(vi.dot(vi));
-			if (size > 100.0f)
+			if (fabs(ki) > m_eps)
 			{
-				int a = 0;
+				if (sim->getBoundaryHandlingMethod() == BoundaryHandlingMethods::Koschier2017)
+				{
+					forall_density_maps(
+						const Vector3r velChange = -h * ki * gradRho;				// kj already contains inverse density
+						vi += velChange;
+						bm_neighbor->addForce(xj, -model->getMass(i) * velChange * invH);
+					);
+				}
+				else if (sim->getBoundaryHandlingMethod() == BoundaryHandlingMethods::Bender2019)
+				{
+					forall_volume_maps(
+						const Vector3r velChange = h * ki * Vj * sim->gradW(xi - xj);				// kj already contains inverse density
+						vi += velChange;
+						bm_neighbor->addForce(xj, -model->getMass(i) * velChange * invH);
+					);
+				}
 			}
-
-			// if (fabs(ki) > m_eps)
-			// {
-			// 	if (sim->getBoundaryHandlingMethod() == BoundaryHandlingMethods::Koschier2017)
-			// 	{
-			// 		forall_density_maps(
-			// 			const Vector3r velChange = -h * ki * gradRho;				// kj already contains inverse density
-			// 			vi += velChange;
-			// 			bm_neighbor->addForce(xj, -model->getMass(i) * velChange * invH);
-			// 		);
-			// 	}
-			// 	else if (sim->getBoundaryHandlingMethod() == BoundaryHandlingMethods::Bender2019)
-			// 	{
-			// 		forall_volume_maps(
-			// 			const Vector3r velChange = h * ki * Vj * sim->gradW(xi - xj);				// kj already contains inverse density
-			// 			vi += velChange;
-			// 			bm_neighbor->addForce(xj, -model->getMass(i) * velChange * invH);
-			// 		);
-			// 	}
-			// }
 		}
 		//////////////////////////////////////////////////////////////////////////
 		// Update rho_adv and density error
@@ -944,14 +959,14 @@ void TimeStepADFSPH::divergenceSolveIteration(const unsigned int fluidModelIndex
 		for (int particleNr = 0; particleNr < numParticles; particleNr++)
 		{
 			const int i = particleIndices[particleNr];
-			computeDensityChange(fluidModelIndex, i, h);
+			computeDensityChange(fluidModelIndex, particleNr, i, h);
 			density_error += m_simulationData.getDensityAdv(fluidModelIndex, i);
 		}
 	}
 	avg_density_err = density0 * density_error / numParticles;
 }
 
-void TimeStepADFSPH::computeDensityAdv(const unsigned int fluidModelIndex, const unsigned int i, const Real h, const Real density0)
+void TimeStepADFSPH::computeDensityAdv(unsigned int fluidModelIndex, unsigned int particleNr, unsigned int i, Real h, Real density0)
 {
 	Simulation *sim = Simulation::getCurrent();
 	FluidModel *model = sim->getFluidModel(fluidModelIndex);
@@ -973,7 +988,7 @@ void TimeStepADFSPH::computeDensityAdv(const unsigned int fluidModelIndex, const
 	forall_fluid_neighbors_avx_nox(
 		compute_xj(fm_neighbor, pid);
 		compute_Vj(fm_neighbor);
-		compute_Vj_gradW();
+		compute_Vj_gradW_adfsph();
 		const Vector3f8 vj_avx = convertVec_zero(&sim->getNeighborList(fluidModelIndex, pid, i)[j], &fm_neighbor->getVelocity(0), count);
 		delta_avx += (vi_avx - vj_avx).dot(V_gradW);
 	);
@@ -1013,7 +1028,7 @@ void TimeStepADFSPH::computeDensityAdv(const unsigned int fluidModelIndex, const
 	densityAdv = max(densityAdv, static_cast<Real>(1.0));
 }
 
-void TimeStepADFSPH::computeDensityChange(const unsigned int fluidModelIndex, const unsigned int i, const Real h)
+void TimeStepADFSPH::computeDensityChange(unsigned int fluidModelIndex, unsigned int particleNr, unsigned int i, Real h)
 {
 	Simulation *sim = Simulation::getCurrent();
 	FluidModel *model = sim->getFluidModel(fluidModelIndex);
@@ -1033,7 +1048,7 @@ void TimeStepADFSPH::computeDensityChange(const unsigned int fluidModelIndex, co
 	forall_fluid_neighbors_avx_nox(
 		compute_xj(fm_neighbor, pid);
 		compute_Vj(fm_neighbor);
-		compute_Vj_gradW();
+		compute_Vj_gradW_adfsph();
 		const Vector3f8 vj_avx = convertVec_zero(&sim->getNeighborList(fluidModelIndex, pid, i)[j], &fm_neighbor->getVelocity(0), count);
 		densityAdv_avx += (vi_avx - vj_avx).dot(V_gradW);
 	);
@@ -1751,12 +1766,18 @@ void TimeStepADFSPH::stepLevel(unsigned int level, Real dt)
 	TimeManager *tm = TimeManager::getCurrent();
 	const unsigned int nModels = sim->numberOfFluidModels();
 
-	const unsigned int* particleCounts = m_particleGrid.getLevelUnionParticleCounts(level);
+	performNeighborhoodSearch();
+#ifdef USE_PERFORMANCE_OPTIMIZATION
+	precomputeValues();
+
 	for (unsigned int fluidModelIndex = 0; fluidModelIndex < nModels; fluidModelIndex++)
 	{
 		FluidModel* model = sim->getFluidModel(fluidModelIndex);
-		model->setNumActiveParticles(particleCounts[fluidModelIndex]);
+		m_fluidModelCopies[fluidModelIndex]->copyPrecomputedParticleData(model);
 	}
+#endif
+
+	setActiveParticles(level);
 
 	tm->setTimeStepSize(dt);
 
@@ -1783,7 +1804,7 @@ void TimeStepADFSPH::stepLevel(unsigned int level, Real dt)
 	if (m_enableDivergenceSolver)
 	{
 		START_TIMING("divergenceSolve");
-		divergenceSolve(); // Neighbor KappaV, Velocities, Advected Densities and DFSPH Factors
+		// divergenceSolve(); // Neighbor KappaV, Velocities, Advected Densities and DFSPH Factors
 		STOP_TIMING_AVG
 	}
 	else
@@ -1797,7 +1818,17 @@ void TimeStepADFSPH::stepLevel(unsigned int level, Real dt)
 
 	// sim->computeNonPressureForces(); // See definition for neighbor data accesses
 
-	sim->updateTimeStepSize();
+	if (level == REGION_LEVELS_COUNT - 1)
+	{
+		// For the sake of calculating the new time step size, set the smallest time step
+		tm->setTimeStepSize(dt / std::powf(LEVEL_TIMESTEP_MULTIPLIER, REGION_LEVELS_COUNT - 1));
+		sim->updateTimeStepSize();
+		dt = tm->getTimeStepSize() * std::powf(LEVEL_TIMESTEP_MULTIPLIER, REGION_LEVELS_COUNT - 1);
+		tm->setTimeStepSize(dt);
+
+		// m_particleGrid.determineRegions();
+		// setActiveParticles(level);
+	}
 
 	checkVelocities();
 
@@ -1854,9 +1885,59 @@ void TimeStepADFSPH::stepLevel(unsigned int level, Real dt)
 		}
 	}
 
+	checkVelocities();
+
 	if (level > 0)
+	{
+		/*	Revert the lower level regions' particle data in fluid models using fluid model copies (which store
+			previous timesteps). */
+		const unsigned int* lowerLevelUnionParticleCounts = m_particleGrid.getLevelUnionParticleCounts(level - 1);
+
+		for (unsigned int modelIdx = 0; modelIdx < nModels; modelIdx++)
+		{
+			FluidModelCopy* modelCopy = m_fluidModelCopies[modelIdx];
+			const unsigned int* particleIndices = modelCopy->getParticleIndices();
+
+			const unsigned int numParticlesToCopy = lowerLevelUnionParticleCounts[modelIdx];
+
+			sim->getFluidModel(modelIdx)->copyParticleData(modelCopy, particleIndices, numParticlesToCopy);
+			m_simulationData.copyData(&m_simulationDataCopy, modelIdx, particleIndices, numParticlesToCopy);
+		}
+
 		for (unsigned int subStepNr = 0; subStepNr < LEVEL_TIMESTEP_MULTIPLIER; subStepNr++)
-			stepLevel(level - 1, dt / 3.0f);
+			stepLevel(level - 1, dt / LEVEL_TIMESTEP_MULTIPLIER);
+
+		setActiveParticles(level);
+
+		/* Synchronize the fluid model copies with the latest data */
+		for (unsigned int modelIdx = 0; modelIdx < nModels; modelIdx++)
+		{
+			FluidModel* model = sim->getFluidModel(modelIdx);
+			const unsigned int* particleIndices = model->getParticleIndices();
+
+			const unsigned int numParticlesToCopy = lowerLevelUnionParticleCounts[modelIdx];
+
+			m_fluidModelCopies[modelIdx]->copyParticleData(model, particleIndices, numParticlesToCopy);
+			m_simulationDataCopy.copyData(&m_simulationData, modelIdx, particleIndices, numParticlesToCopy);
+		}
+	}
+}
+
+void TimeStepADFSPH::setActiveParticles(unsigned int level)
+{
+	Simulation* sim = Simulation::getCurrent();
+	const unsigned int nModels = sim->numberOfFluidModels();
+
+	const unsigned int* particleCounts = m_particleGrid.getLevelUnionParticleCounts(level);
+	for (unsigned int fluidModelIndex = 0; fluidModelIndex < nModels; fluidModelIndex++)
+	{
+		FluidModel* model = sim->getFluidModel(fluidModelIndex);
+		FluidModelCopy* modelCopy = m_fluidModelCopies[fluidModelIndex];
+
+		const unsigned int numActiveParticles = particleCounts[fluidModelIndex];
+		model->setNumActiveParticles(numActiveParticles);
+		modelCopy->setNumActiveParticles(numActiveParticles);
+	}
 }
 
 void TimeStepADFSPH::emittedParticles(FluidModel *model, const unsigned int startIndex)
@@ -1867,4 +1948,5 @@ void TimeStepADFSPH::emittedParticles(FluidModel *model, const unsigned int star
 void TimeStepADFSPH::resize()
 {
 	m_simulationData.init();
+	m_simulationDataCopy.init();
 }

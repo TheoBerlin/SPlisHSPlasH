@@ -1,30 +1,221 @@
-[2021-03-10 15:58:49] Info:    SPlisHSPlasH version: 2.9.1
-[2021-03-10 15:58:49] Debug:   Git refspec:          refs/heads/regional_steps
-[2021-03-10 15:58:49] Debug:   Git SHA1:             f779681936e03a08ba0781b0662b7a29ca7ec318
-[2021-03-10 15:58:49] Debug:   Git status:           DIRTY
-[2021-03-10 15:58:49] Debug:   Host name:            DESKTOP-KSQC32J
-[2021-03-10 15:58:49] Info:    Output directory: D:/Documents/SPlisHSPlasH/bin/output/Bunny_vs_Dragon
-[2021-03-10 15:58:49] Info:    Load scene file: D:\Documents\SPlisHSPlasH\data\Scenes\Bunny_vs_Dragon.json
-[2021-03-10 15:58:49] Info:    Initialize static boundary simulation
-[2021-03-10 15:58:49] Info:    Initialize fluid particles
-[2021-03-10 15:58:49] Info:    Number of fluid particles: 7706
-[2021-03-10 15:58:49] Info:    OpenGL version 4.6
-[2021-03-10 15:58:49] Info:    Vendor: NVIDIA Corporation
-[2021-03-10 15:58:49] Info:    Renderer: GeForce RTX 2080 Ti/PCIe/SSE2
-[2021-03-10 15:58:49] Info:    Version: 4.6.0 NVIDIA 460.89
-[2021-03-10 15:58:49] Info:    ---------------------------------------------------------------------------
+[2021-04-01 12:20:04] Info:    SPlisHSPlasH version: 2.9.1
+[2021-04-01 12:20:04] Debug:   Git refspec:          refs/heads/regional_steps
+[2021-04-01 12:20:04] Debug:   Git SHA1:             0fd52c8cc8bf4c053cdc6874a10fb9c99c604f36
+[2021-04-01 12:20:04] Debug:   Git status:           DIRTY
+[2021-04-01 12:20:04] Debug:   Host name:            DESKTOP-KSQC32J
+[2021-04-01 12:20:04] Info:    Output directory: D:/Documents/SPlisHSPlasH/bin/output/Bunny_vs_Dragon
+[2021-04-01 12:20:04] Info:    Load scene file: D:\Documents\SPlisHSPlasH\data\Scenes\Bunny_vs_Dragon.json
+[2021-04-01 12:20:04] Info:    Initialize static boundary simulation
+[2021-04-01 12:20:04] Info:    Initialize fluid particles
+[2021-04-01 12:20:04] Info:    Number of fluid particles: 7706
+[2021-04-01 12:20:04] Info:    OpenGL version 4.6
+[2021-04-01 12:20:04] Info:    Vendor: NVIDIA Corporation
+[2021-04-01 12:20:04] Info:    Renderer: GeForce RTX 2080 Ti/PCIe/SSE2
+[2021-04-01 12:20:04] Info:    Version: 4.6.0 NVIDIA 460.89
+[2021-04-01 12:20:04] Info:    ---------------------------------------------------------------------------
 
-[2021-03-10 15:58:49] Info:    ---------------------------------------------------------------------------
+[2021-04-01 12:20:04] Info:    ---------------------------------------------------------------------------
 
-[2021-03-10 15:58:49] Info:    Loading D:/Documents/SPlisHSPlasH/data/models/UnitBox.obj
-[2021-03-10 15:58:49] Info:    Number of triangles: 12
-[2021-03-10 15:58:49] Info:    Number of vertices: 8
-[2021-03-10 15:58:49] Info:    Loaded cached volume map: D:/Documents/SPlisHSPlasH/data/Scenes/Cache/UnitBox_sb_vm_0.025_s6_4_3_r30_30_20_i1_t0.cdm
-[2021-03-10 15:58:49] Info:    Loading D:/Documents/SPlisHSPlasH/data/models/Dragon_50k.obj
-[2021-03-10 15:58:50] Info:    Number of triangles: 50000
-[2021-03-10 15:58:50] Info:    Number of vertices: 25007
-[2021-03-10 15:58:50] Info:    Loaded cached volume map: D:/Documents/SPlisHSPlasH/data/Scenes/Cache/Dragon_50k_sb_vm_0.025_s1_1_1_r20_20_20_i0_t0.cdm
-[2021-03-10 15:58:51] Info:    Loading D:/Documents/SPlisHSPlasH/data/models/Dragon_50k.obj
-[2021-03-10 15:58:52] Info:    Number of triangles: 50000
-[2021-03-10 15:58:52] Info:    Number of vertices: 25007
-[2021-03-10 15:58:52] Info:    Loaded cached volume map: D:/Documents/SPlisHSPlasH/data/Scenes/Cache/Dragon_50k_sb_vm_0.025_s1_1_1_r20_20_20_i0_t0.cdm
+[2021-04-01 12:20:05] Info:    Loading D:/Documents/SPlisHSPlasH/data/models/UnitBox.obj
+[2021-04-01 12:20:05] Info:    Number of triangles: 12
+[2021-04-01 12:20:05] Info:    Number of vertices: 8
+[2021-04-01 12:20:05] Info:    Loaded cached volume map: D:/Documents/SPlisHSPlasH/data/Scenes/Cache/UnitBox_sb_vm_0.025_s6_4_3_r30_30_20_i1_t0.cdm
+[2021-04-01 12:20:05] Info:    Loading D:/Documents/SPlisHSPlasH/data/models/Dragon_50k.obj
+[2021-04-01 12:20:06] Info:    Number of triangles: 50000
+[2021-04-01 12:20:06] Info:    Number of vertices: 25007
+[2021-04-01 12:20:06] Info:    Loaded cached volume map: D:/Documents/SPlisHSPlasH/data/Scenes/Cache/Dragon_50k_sb_vm_0.025_s1_1_1_r20_20_20_i0_t0.cdm
+[2021-04-01 12:20:06] Info:    Loading D:/Documents/SPlisHSPlasH/data/models/Dragon_50k.obj
+[2021-04-01 12:20:07] Info:    Number of triangles: 50000
+[2021-04-01 12:20:07] Info:    Number of vertices: 25007
+[2021-04-01 12:20:07] Info:    Loaded cached volume map: D:/Documents/SPlisHSPlasH/data/Scenes/Cache/Dragon_50k_sb_vm_0.025_s1_1_1_r20_20_20_i0_t0.cdm
+[2021-04-01 12:20:52] Debug:   Particle in boundary.
+[2021-04-01 12:20:52] Debug:   Particle in boundary.
+[2021-04-01 12:20:52] Debug:   Particle in boundary.
+[2021-04-01 12:20:52] Debug:   Particle in boundary.
+[2021-04-01 12:20:52] Debug:   Particle in boundary.
+[2021-04-01 12:20:52] Debug:   Particle in boundary.
+[2021-04-01 12:20:52] Debug:   Particle in boundary.
+[2021[-20214--041- 0112 :1220::2052:] 52Debug:   ] Particle in boundary.Debug:   
+Particle in boundary.
+[2021-04-01 12:20:52] Debug:   Particle in boundary.
+[2021-04-01 12:20:52] Debug:   Particle in boundary.
+[2021-04-01 120[0[:20212021--044-0-2011:  521212] ::Debug:   2020::52Particle in boundary.] 52Debug:   
+Particle in boundary.] Debug:   
+Particle in boundary.
+[2021-04-01 12:20:52] Debug:   Particle in boundary.
+[2021-04-01 12:20:52] Debug:   Particle in boundary.
+[2021-04-01 12:20:52] Debug:   Particle in boundary.
+[2021-04-01 12:20:52] Debug:   Particle in boundary.
+[2021-04-01 12:20:52] Debug:   Particle in boundary.
+[2021-04-01 12:20:52] Debug:   Particle in boundary.
+[2021[-20214--041- 0112 :1220[::20215220-:04] 52Debug:   -Particle in boundary.] 1Debug:    
+Particle in boundary.12:
+20:52] Debug:   Particle in boundary.
+[2021-04-01 12:20:52] Debug:   Particle in boundary.
+[2021-04-01 120[2021:0-[42021-01- 0420-010:12 :5220] :1252Debug:   :Particle in boundary.20] 
+Debug:   :Particle in boundary.52
+] Debug:   Particle in boundary.
+[2021-04-01 12:20:52] Debug:   Particle in boundary.
+[2021[-20214--041- 0112 :1220::2052:] 52[2021] Debug:   -Debug:   Particle in boundary.Particle in boundary.4
+
+[2021-01 [12-:0420-010:2021 0-5212] :Debug:   204Particle in boundary.:0-52
+] Debug:   Particle in boundary.
+1 12:20:52] Debug:   Particle in boundary.
+[2021[-20214--041- 0112 :1220::2052:] 52Debug:   ] Debug:   Particle in boundary.Particle in boundary.
+
+[2021-04-01 12:20:52] Debug:   Particle in boundary.[
+2021-04-01 12:20:52] Debug:   Particle in boundary.
+[2021-04-01 12:20:52] Debug:   Particle in boundary.
+[2021-04-01 12:20:52] Debug:   Particle in boundary.
+[2021-04-01 12:20:52] Debug:   [Particle in boundary.2021
+-04-01 12:20:52] Debug:   Particle in boundary.
+[2021-04-01 12:20:52] Debug:   Particle in boundary.
+[2021-04-01 12:20:52] Debug:   Particle in boundary.
+[2021-04-01 12:20:52] Debug:   Particle in boundary.
+[2021-04-01 12:20:52] Debug:   Particle in boundary.
+[2021-04-01 12:20:52] Debug:   Particle in boundary.
+[2021-04-01[ 202112-:0420-:0152 ] 12Debug:   :Particle in boundary.20
+:52] Debug:   Particle in boundary.
+[2021[2021-0-044-0-011  1212:20::2052:] 52Debug:   ] Particle in boundary.Debug:   
+Particle in boundary.
+[2021-04-01 12:20:52] Debug:   Particle in boundary.
+[2021-04-01 12:20:52] Debug:   Particle in boundary.
+[2021-04-01 12:20:52] Debug:   Particle in boundary.
+[2021-04-01 12:20:52] Debug:   Particle in boundary.
+[2021-04-01 12:20:52] Debug:   Particle in boundary.
+[2021-04-01 12:20:52] Debug:   Particle in boundary.
+[2021-040[-20211- 0412-:0120 :1252:] 20Debug:   :Particle in boundary.52
+] Debug:   Particle in boundary.
+[2021-04-01 12:20:52] Debug:   Particle in boundary.
+[2021[-20214--041- 0112 :1220::2052:] 52Debug:   ] Particle in boundary.Debug:   
+Particle in boundary.
+[2021-04-01 12:20:[522021] -[Debug:   20214-04Particle in boundary.-0-011
+  1212:20:0:5220] :Debug:   52Particle in boundary.] Debug:   
+Particle in boundary.
+[2021-04-01 12:20:52] Debug:   Particle in boundary.
+[2021[-20214--041- [121: 2012:2021:5220] -0[4Debug:   -Particle in boundary.2021
+1:520[2021] -[Debug:   -Particle in boundary.04 04-12-01
+0: 2010[:20212021--044-0152 ] 1212-:01 :20 :125212] ::Debug:   20Particle in boundary.Debug:   
+200[Particle in boundary.:20::522021] 52-Debug:   
+452] -01 Particle in boundary.] 12Debug:   :Particle in boundary.Debug:   20
+Particle in boundary.:
+52] Debug:   
+Particle in boundary.
+[2021-04-01 12:20:52] Debug:   Particle in boundary.
+[2021-04-01 12:20:52[] 2021Debug:   -Particle in boundary.4[-20211-04
+-010  1212::2020::5252] ] Debug:   Debug:   Particle in boundary.Particle in boundary.
+
+[2021-04-01 12:20:52] Debug:   Particle in boundary.
+[2021[-20214-0-041- 0112 :1220::2052:] 52Debug:   ] Particle in boundary.Debug:   
+Particle in boundary.
+[2021-04-010[ 202112-:0420-:010[ 52[20212021-04-1240[-] 20211-040 0-0[12-01: 202120Debug:   12:Particle in boundary.::2052201:] 52Debug:   
+Particle in boundary. ] 
+Debug:   -0412-Particle in boundary.:01
+0[202021: :0-1252:] 5220[] :Debug:   522021] Debug:   -Particle in boundary.4-01[ 04-01Debug:    12Particle in boundary.:Particle in boundary.20
+
+:
+2021-04-01 12:20:52] Debug:   Particle in boundary.
+[2021-524] -Debug:   1Particle in boundary. 12
+:20:52] Debug:   Particle in boundary.
+[2021-04-01 [122021:0-204:0-521]  Debug:   12Particle in boundary.:20
+:0[522021-04] -Debug:   1Particle in boundary. 12
+:20[:202152-] 4Debug:   -Particle in boundary.1
+ 12:20:52] Debug:   Particle in boundary.
+[2021-040[-20211- 0412-:0120 :1252:] 20Debug:   :Particle in boundary.52
+] Debug:   Particle in boundary.
+[2021-04-01 12:20:52] Debug:   Particle in boundary.
+[2021-04-01 12:20:52] Debug:   Particle in boundary.
+12:20[:20210[-5242021-01]  Debug:   -12Particle in boundary.4:-
+201 12::2052:] 52Debug:   Particle in boundary.[2021[] -
+2021Debug:   4Particle in boundary.-0-
+01 12:20:52] Debug:   Particle in boundary.
+[2021-04-01 12:20:52] Debug:   Particle in boundary.
+[2021-04-01 12:20:52] Debug:   Particle in boundary.
+[2021-04-01 12:20:52] Debug:   Particle in boundary.
+[2021-04-01 12:20:520[] 2021Debug:   -Particle in boundary.4
+-014 12-:20:52] Debug:   1Particle in boundary. 
+12:20:52] Debug:   Particle in boundary.
+[2021[-20214--041- 0112 :1220::2052:] 52Debug:   ] Particle in boundary.Debug:   
+Particle in boundary.
+[2021[-20214-0-041- 0112 :1220::2052:] 52Debug:   ] Particle in boundary.Debug:   
+Particle in boundary.
+[2021[-20214--041- 0112 :12[:202120-20::5252] Debug:   Particle in boundary.] 
+Debug:   Particle in boundary.
+4[2021-04--011  1212::2020::5252] ] Debug:   Debug:   Particle in boundary.Particle in boundary.
+
+[2021-04-01 12:20:52] Debug:   Particle in boundary.
+[2021-04-01 12:20:52] Debug:   Particle in boundary.
+[2021[-20214--041- 0112 :1220::2052:] 52Debug:   ] Particle in boundary.Debug:   
+Particle in boundary.
+[2021-04-01 12:20:520[2021] Debug:   -Particle in boundary.4
+-01 12:20:52] Debug:   Particle in boundary.
+[2021-04-01 12:20:52] Debug:   Particle in boundary.
+[2021-04-01 12:20:52] Debug:   Particle in boundary.
+[2021-04-01 12:20:52] Debug:   Particle in boundary.
+[2021-04-01 12:200[:202152-] 4Debug:   -Particle in boundary.1
+ 12:20:52] Debug:   Particle in boundary.
+[2021-04-01 12:20:52] Debug:   Particle in boundary.
+[2021-04-01 12:20:52] Debug:   Particle in boundary.
+[2021-04-01 12:20:52] Debug:   Particle in boundary.
+[2021-04-01 12:20:52] Debug:   Particle in boundary.
+[2021-04-01 12:20:52] Debug:   Particle in boundary.
+[2021-04-01 12:20:52] Debug:   Particle in boundary.
+[2021-04-01 12:20:52] Debug:   Particle in boundary.
+[2021-04-01 12:20:52] Debug:   Particle in boundary.
+[2021-04-01 12:20:53] Debug:   Particle in boundary.
+[2021-04-01 12:20:53] Debug:   Particle in boundary.
+[2021-04-01 12:20:53] Debug:   Particle in boundary.
+[2021-04-01 12:20:53] Debug:   Particle in boundary.
+[2021-04-01 12:20:53] Debug:   Particle in boundary.
+[2021-04-01 12:20:53] Debug:   Particle in boundary.
+[2021-04-01 12:20:53] Debug:   Particle in boundary.
+[2021-04-01 12:20:53] Debug:   Particle in boundary.
+[2021-04-01 12:20:53] Debug:   Particle in boundary.
+[2021-04-01 12:20:53] Debug:   Particle in boundary.
+[2021-04-01 12:20:53] Debug:   Particle in boundary.
+[2021-04-01 12:20:53] Debug:   Particle in boundary.
+[2021-04-01 12:20:53] Debug:   Particle in boundary.
+[2021-04-01 12:20:53] Debug:   Particle in boundary.
+[2021-04-01 12:20:53] Debug:   Particle in boundary.
+[2021-04-01 12:20:53] Debug:   Particle in boundary.
+[2021-04-01 12:20:55] Debug:   Particle in boundary.
+[2021-04-01 12:20:55] Debug:   Particle in boundary.
+[2021-04-01 12:20:55] Debug:   Particle in boundary.
+[2021-04-01 12:20:55] Debug:   Particle in boundary.
+[2021-04-01 12:20:55] Debug:   Particle in boundary.
+[2021-04-01 12:20:55] Debug:   Particle in boundary.
+[2021-04-01 12:20:55] Debug:   Particle in boundary.
+[2021-04-01 12:20:55] Debug:   Particle in boundary.
+[2021-04-01 12:20:55] Debug:   Particle in boundary.
+[2021-04-01 12:20:55] Debug:   Particle in boundary.
+[2021-04-01 12:20:55] Debug:   Particle in boundary.
+[2021-04-01 12:20:55] Debug:   Particle in boundary.
+[2021[-20214-0-041- 0112 :1220::2055:] 55Debug:   ] Particle in boundary.Debug:   
+Particle in boundary.
+[2021-04-01 12:20:55] Debug:   Particle in boundary.
+[2021-04-01 12:20:55] Debug:   Particle in boundary.
+[2021-04-01 12:20:55] Debug:   Particle in boundary.
+[2021-04-01 12:20:55] Debug:   Particle in boundary.
+[2021-04-01 12:20:55] Debug:   Particle in boundary.
+[2021-04-01 12:20:55] Debug:   Particle in boundary.
+[2021-04-01 12:20:55] Debug:   Particle in boundary.
+[2021-04-01 12:20:55] Debug:   Particle in boundary.
+[2021-04-01 12:20:55] Debug:   Particle in boundary.
+[2021-04-01 12:20:55] Debug:   Particle in boundary.
+[2021-04-01 12:20:55] Debug:   Particle in boundary.
+[2021-04-01 12:20:55] Debug:   Particle in boundary.
+[2021-04-01 12:20:55] Debug:   Particle in boundary.
+[2021-04-01 12:20:55] Debug:   Particle in boundary.
+[2021-04-01 12:20:55] Debug:   Particle in boundary.
+[2021-04-01 12:20:55] Debug:   Particle in boundary.
+[2021-04-01 12:20:55] Debug:   Particle in boundary.
+[2021-04-01 12:20:55] Debug:   Particle in boundary.
+[2021-04-01 12:20:55] Debug:   Particle in boundary.
+[2021-04-01 12:20:55] Debug:   Particle in boundary.
+[2021-04-01 12:20:55] Debug:   Particle in boundary.
+[2021-04-01 12:20:55] Debug:   Particle in boundary.
+[2021-04-01 12:20:55] Debug:   Particle in boundary.
+[2021-04-01 12:20:55] Debug:   Particle in boundary.
+[2021-04-01 12:20:55] Debug:   Particle in boundary.
+[2021-04-01 12:20:55] Debug:   Particle in boundary.
+[2021-04-01 12:20:55] Debug:   Particle in boundary.

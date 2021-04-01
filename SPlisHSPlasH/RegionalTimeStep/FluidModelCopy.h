@@ -9,7 +9,7 @@ namespace SPH
 
     /*  ADFSPH requires duplicated particle data to store simulation states at different times. This class keeps such
         duplicated data. */
-    class FluidModelCopy : FluidModel
+    class FluidModelCopy : public FluidModel
     {
     public:
         FluidModelCopy() = default;
@@ -17,8 +17,6 @@ namespace SPH
 
         // Copy particle data and non-pressure force methods like surface tensions
         void init(const FluidModel* fluidModel);
-
-        void syncParticleData(const FluidModel* fluidModel);
 
     private:
         void copyNonPressureForceMethods(const FluidModel* fluidModel);

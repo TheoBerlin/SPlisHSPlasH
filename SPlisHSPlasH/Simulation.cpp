@@ -85,9 +85,6 @@ Simulation::Simulation ()
 	m_simulationMethod = SimulationMethods::NumSimulationMethods;
 	m_simulationMethodChanged = NULL;
 
-	m_currentLevelParticleIndices = nullptr;
-	m_currentLevelParticleCounts = 0;
-
 	m_sim2D = false;
 	m_enableZSort = true;
 
