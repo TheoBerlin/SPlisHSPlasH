@@ -36,11 +36,14 @@ TimeStepADFSPH::TimeStepADFSPH() :
 	m_enableDivergenceSolver = true;
 	m_maxIterationsV = 100;
 	m_maxErrorV = static_cast<Real>(0.1);
+	m_stepNr = 0;
+	m_lastCalculatedLevel = UINT32_MAX;
 
 	Simulation *sim = Simulation::getCurrent();
 	const unsigned int nModels = sim->numberOfFluidModels();
 
 	m_fluidModelCopies.resize(nModels);
+	m_originalFluidModel.reserve(nModels);
 
 	for (unsigned int fluidModelIndex = 0; fluidModelIndex < nModels; fluidModelIndex++)
 	{
@@ -102,39 +105,63 @@ void TimeStepADFSPH::step()
 	TimeManager *tm = TimeManager::getCurrent();
 	const unsigned int nModels = sim->numberOfFluidModels();
 
-	m_particleGrid.determineRegions();
-
-	const std::vector<unsigned int>* particleIndices = m_particleGrid.getLevelParticleIndices();
-	const unsigned int* particleCounts = m_particleGrid.getLevelUnionParticleCounts(REGION_LEVELS_COUNT - 1);
-
-	for (unsigned int fluidModelIndex = 0; fluidModelIndex < nModels; fluidModelIndex++)
+	for (unsigned int modelIdx = 0; modelIdx < nModels; modelIdx++)
 	{
-		FluidModel* model = sim->getFluidModel(fluidModelIndex);
-		FluidModelCopy* modelCopy = m_fluidModelCopies[fluidModelIndex];
-
-		const unsigned int* modelParticleIndices = particleIndices[fluidModelIndex].data();
-		const unsigned int numActiveParticles = particleCounts[fluidModelIndex];
-
-		model->setParticleIndices(modelParticleIndices);
-		model->setNumActiveParticles(numActiveParticles);
-
-		modelCopy->setParticleIndices(modelParticleIndices);
-		modelCopy->setNumActiveParticles(numActiveParticles);
+		m_fluidModelCopies[modelIdx]->copyParticleData(sim->getFluidModel(modelIdx));
 	}
 
-	const Real globalTimeStepSize = tm->getTimeStepSize() * std::pow(LEVEL_TIMESTEP_MULTIPLIER, REGION_LEVELS_COUNT - 1);
-	printf("Time step: %f\n", globalTimeStepSize);
+	unsigned int highestLevelToCalculate = 0;
+	for (unsigned int level = REGION_LEVELS_COUNT - 1; level > 0; level--)
+	{
+		if ((m_stepNr % (unsigned int)std::pow(LEVEL_TIMESTEP_MULTIPLIER, level)) == 0)
+		{
+			highestLevelToCalculate = level;
+			break;
+		}
+	}
 
-	checkVelocities();
-	stepLevel(REGION_LEVELS_COUNT - 1, globalTimeStepSize);
-	checkVelocities();
+	Real timeStepSize = tm->getTimeStepSize();
+	const Real largestTimeStepSize = timeStepSize * std::pow(LEVEL_TIMESTEP_MULTIPLIER, highestLevelToCalculate);
+
+	if (highestLevelToCalculate == REGION_LEVELS_COUNT - 1)
+	{
+		m_particleGrid.determineRegions();
+	}
+
+	calculateLevel(highestLevelToCalculate, largestTimeStepSize);
+
+	timeStepSize = tm->getTimeStepSize();
+
+	// compute final positions
+	for (unsigned int m = 0; m < nModels; m++)
+	{
+		FluidModel *fm = sim->getFluidModel(m);
+		fm->setNumActiveParticles(fm->getNumActiveParticles0());
+
+		#pragma omp parallel default(shared)
+		{
+			const int numParticles = (int)fm->getNumActiveParticles0();
+			const unsigned int* particleIndices = fm->getParticleIndices();
+
+			#pragma omp for schedule(static)
+			for (int i = 0; i < numParticles; i++)
+			{
+				if (fm->getParticleState(i) == ParticleState::Active)
+				{
+					Vector3r &xi = fm->getPosition(i);
+					const Vector3r &vi = fm->getVelocity(i);
+					xi += timeStepSize * vi;
+				}
+			}
+		}
+	}
 
 	sim->emitParticles();
 	sim->animateParticles();
 
 	// Compute new time
-	// tm->setTimeStepSize(globalTimeStepSize);
-	tm->setTime(tm->getTime() + globalTimeStepSize);
+	tm->setTime(tm->getTime() + tm->getTimeStepSize());
+	m_stepNr += 1;
 }
 
 
@@ -142,7 +169,6 @@ void TimeStepADFSPH::pressureSolve()
 {
 	const Real h = TimeManager::getCurrent()->getTimeStepSize();
 	const Real h2 = h*h;
-	const Real invH = static_cast<Real>(1.0) / h;
 	const Real invH2 = static_cast<Real>(1.0) / h2;
 	Simulation *sim = Simulation::getCurrent();
 	const unsigned int nFluids = sim->numberOfFluidModels();
@@ -214,14 +240,18 @@ void TimeStepADFSPH::pressureSolve()
 	{
 		FluidModel *model = sim->getFluidModel(fluidModelIndex);
 		const int numParticles = (int)model->numActiveParticles();
+		const unsigned int* particleIndices = model->getParticleIndices();
 
 		//////////////////////////////////////////////////////////////////////////
 		// Multiply by h^2, the time step size has to be removed
 		// to make the stiffness value independent
 		// of the time step size
 		//////////////////////////////////////////////////////////////////////////
-		for (int i = 0; i < numParticles; i++)
+		for (int particleNr = 0; particleNr < numParticles; particleNr++)
+		{
+			const unsigned int i = particleIndices[particleNr];
 			m_simulationData.getKappa(fluidModelIndex, i) *= h2;
+		}
 	}
 #endif
 }
@@ -1760,11 +1790,33 @@ void TimeStepADFSPH::performNeighborhoodSearch()
 	Simulation::getCurrent()->performNeighborhoodSearch();
 }
 
-void TimeStepADFSPH::stepLevel(unsigned int level, Real dt)
+void TimeStepADFSPH::calculateLevel(unsigned int level, Real dt)
 {
 	Simulation *sim = Simulation::getCurrent();
 	TimeManager *tm = TimeManager::getCurrent();
 	const unsigned int nModels = sim->numberOfFluidModels();
+
+	if (level != REGION_LEVELS_COUNT - 1)
+	{
+		if (m_lastCalculatedLevel < level)
+		{
+			/*	In the previous timestep, a lower level was calculated, thus this level's indices have been
+				overwritten by the lower level's border particle indices. Redefine the particle indices for this
+				level. */
+			const unsigned int* firstParticleNumbers = m_particleGrid.getLevelUnionParticleCounts(level - 1);
+			m_particleGrid.defineLevelParticleIndices(firstParticleNumbers, level);
+		}
+
+		if (m_lastCalculatedLevel != level)
+		{
+			m_particleGrid.calculateLevelBorder(level);
+		}
+	}
+
+	tm->setTimeStepSize(dt);
+	setActiveParticles(level);
+
+	m_lastCalculatedLevel = level;
 
 	performNeighborhoodSearch();
 #ifdef USE_PERFORMANCE_OPTIMIZATION
@@ -1776,10 +1828,6 @@ void TimeStepADFSPH::stepLevel(unsigned int level, Real dt)
 		m_fluidModelCopies[fluidModelIndex]->copyPrecomputedParticleData(model);
 	}
 #endif
-
-	setActiveParticles(level);
-
-	tm->setTimeStepSize(dt);
 
 	checkVelocities();
 	if (sim->getBoundaryHandlingMethod() == BoundaryHandlingMethods::Bender2019)
@@ -1821,13 +1869,9 @@ void TimeStepADFSPH::stepLevel(unsigned int level, Real dt)
 	if (level == REGION_LEVELS_COUNT - 1)
 	{
 		// For the sake of calculating the new time step size, set the smallest time step
-		tm->setTimeStepSize(dt / std::powf(LEVEL_TIMESTEP_MULTIPLIER, REGION_LEVELS_COUNT - 1));
+		tm->setTimeStepSize(dt / std::pow(LEVEL_TIMESTEP_MULTIPLIER, REGION_LEVELS_COUNT - 1));
 		sim->updateTimeStepSize();
-		dt = tm->getTimeStepSize() * std::powf(LEVEL_TIMESTEP_MULTIPLIER, REGION_LEVELS_COUNT - 1);
-		tm->setTimeStepSize(dt);
-
-		// m_particleGrid.determineRegions();
-		// setActiveParticles(level);
+		dt = tm->getTimeStepSize() * std::pow(LEVEL_TIMESTEP_MULTIPLIER, REGION_LEVELS_COUNT - 1);
 	}
 
 	checkVelocities();
@@ -1862,63 +1906,87 @@ void TimeStepADFSPH::stepLevel(unsigned int level, Real dt)
 
 	checkVelocities();
 
-	// compute final positions
-	for (unsigned int m = 0; m < nModels; m++)
+	if (level < REGION_LEVELS_COUNT - 1)
 	{
-		FluidModel *fm = sim->getFluidModel(m);
-		const int numParticles = (int)fm->numActiveParticles();
-		#pragma omp parallel default(shared)
-		{
-			const unsigned int* particleIndices = fm->getParticleIndices();
-
-			#pragma omp for schedule(static)
-			for (int particleNr = 0; particleNr < numParticles; particleNr++)
-			{
-				const unsigned int i = particleIndices[particleNr];
-				if (fm->getParticleState(i) == ParticleState::Active)
-				{
-					Vector3r &xi = fm->getPosition(i);
-					const Vector3r &vi = fm->getVelocity(i);
-					xi += dt * vi;
-				}
-			}
-		}
+		interpolateBorderParticles(level);
 	}
-
-	checkVelocities();
 
 	if (level > 0)
 	{
 		/*	Revert the lower level regions' particle data in fluid models using fluid model copies (which store
 			previous timesteps). */
-		const unsigned int* lowerLevelUnionParticleCounts = m_particleGrid.getLevelUnionParticleCounts(level - 1);
+		const unsigned int* lowerLevelUnionParticleCounts = level > 0 ? m_particleGrid.getLevelUnionParticleCounts(level - 1) : nullptr;
+		const unsigned int* currentLevelParticleCounts = m_particleGrid.getLevelParticleCounts(level);
 
 		for (unsigned int modelIdx = 0; modelIdx < nModels; modelIdx++)
 		{
-			FluidModelCopy* modelCopy = m_fluidModelCopies[modelIdx];
-			const unsigned int* particleIndices = modelCopy->getParticleIndices();
+			FluidModel* activeModel = sim->getFluidModel(modelIdx);
+			FluidModel* modelCopy = m_fluidModelCopies[modelIdx];
 
-			const unsigned int numParticlesToCopy = lowerLevelUnionParticleCounts[modelIdx];
+			const unsigned int* particleIndices = activeModel->getParticleIndices();
 
-			sim->getFluidModel(modelIdx)->copyParticleData(modelCopy, particleIndices, numParticlesToCopy);
-			m_simulationData.copyData(&m_simulationDataCopy, modelIdx, particleIndices, numParticlesToCopy);
+			const unsigned int numParticlesToCopy = currentLevelParticleCounts[modelIdx];
+			const unsigned int startingIndex = level > 0 ? lowerLevelUnionParticleCounts[modelIdx] : 0;
+
+			modelCopy->copyParticleData(activeModel, &particleIndices[startingIndex], numParticlesToCopy);
+			m_simulationDataCopy.copyData(&m_simulationData, modelIdx, &particleIndices[startingIndex], numParticlesToCopy);
+
+			// Revert sublevels using the copied data
+			activeModel->copyParticleData(modelCopy, particleIndices, lowerLevelUnionParticleCounts[modelIdx]);
+			m_simulationData.copyData(&m_simulationDataCopy, modelIdx, particleIndices, lowerLevelUnionParticleCounts[modelIdx]);
 		}
 
-		for (unsigned int subStepNr = 0; subStepNr < LEVEL_TIMESTEP_MULTIPLIER; subStepNr++)
-			stepLevel(level - 1, dt / LEVEL_TIMESTEP_MULTIPLIER);
+		calculateLevel(level - 1, dt / LEVEL_TIMESTEP_MULTIPLIER);
+	}
+}
 
-		setActiveParticles(level);
+void TimeStepADFSPH::interpolateBorderParticles(unsigned int level)
+{
+	Simulation* sim = Simulation::getCurrent();
+	const unsigned int nModels = sim->numberOfFluidModels();
 
-		/* Synchronize the fluid model copies with the latest data */
-		for (unsigned int modelIdx = 0; modelIdx < nModels; modelIdx++)
+	for (unsigned int modelIdx = 0; modelIdx < nModels; modelIdx++)
+	{
+		FluidModel* model = sim->getFluidModel(modelIdx);
+		FluidModel* modelCopy = m_fluidModelCopies[modelIdx];
+		const unsigned int lowerLevelParticleCount = m_particleGrid.getLevelUnionParticleCounts(level)[modelIdx];
+
+		const unsigned int* particleIndices = &model->getParticleIndices()[lowerLevelParticleCount];
+		const int borderParticleCount = (int)m_particleGrid.getLevelBorderParticleCounts(level, modelIdx);
+
+		// Placeholder linear interpolation of a few attributes. TODO: 'better' interpolation, take other level into account?
+		#pragma omp parallel default(shared)
 		{
-			FluidModel* model = sim->getFluidModel(modelIdx);
-			const unsigned int* particleIndices = model->getParticleIndices();
+			#pragma omp for schedule(static)
+			for (int particleNr = 0; particleNr < borderParticleCount; particleNr++)
+			{
+				const unsigned int i = particleIndices[particleNr];
 
-			const unsigned int numParticlesToCopy = lowerLevelUnionParticleCounts[modelIdx];
+				Vector3r& pos = model->getPosition(i);
+				pos = 0.5f * (pos + modelCopy->getPosition(i));
 
-			m_fluidModelCopies[modelIdx]->copyParticleData(model, particleIndices, numParticlesToCopy);
-			m_simulationDataCopy.copyData(&m_simulationData, modelIdx, particleIndices, numParticlesToCopy);
+				Vector3r& vel = model->getVelocity(i);
+				auto bla = modelCopy->getVelocity(i);
+				vel = 0.5f * (vel + modelCopy->getVelocity(i));
+
+				Vector3r& accel = model->getAcceleration(i);
+				accel = 0.5f * (accel + modelCopy->getAcceleration(i));
+
+				Real& density = model->getDensity(i);
+				density = 0.5f * (density + modelCopy->getDensity(i));
+
+				Real& densityAdv = m_simulationData.getDensityAdv(modelIdx, i);
+				densityAdv = 0.5f * (densityAdv + m_simulationDataCopy.getDensityAdv(modelIdx, i));
+
+				Real& factor = m_simulationData.getFactor(modelIdx, i);
+				factor = 0.5f * (factor + m_simulationDataCopy.getFactor(modelIdx, i));
+
+				Real& kappa = m_simulationData.getKappa(modelIdx, i);
+				kappa = 0.5f * (kappa + m_simulationDataCopy.getKappa(modelIdx, i));
+
+				Real& kappaV = m_simulationData.getKappaV(modelIdx, i);
+				kappaV = 0.5f * (kappaV + m_simulationDataCopy.getKappaV(modelIdx, i));
+			}
 		}
 	}
 }
@@ -1929,14 +1997,21 @@ void TimeStepADFSPH::setActiveParticles(unsigned int level)
 	const unsigned int nModels = sim->numberOfFluidModels();
 
 	const unsigned int* particleCounts = m_particleGrid.getLevelUnionParticleCounts(level);
-	for (unsigned int fluidModelIndex = 0; fluidModelIndex < nModels; fluidModelIndex++)
-	{
-		FluidModel* model = sim->getFluidModel(fluidModelIndex);
-		FluidModelCopy* modelCopy = m_fluidModelCopies[fluidModelIndex];
+	const std::vector<unsigned int>* particleIndices = m_particleGrid.getLevelParticleIndices();
 
-		const unsigned int numActiveParticles = particleCounts[fluidModelIndex];
+	for (unsigned int modelIdx = 0; modelIdx < nModels; modelIdx++)
+	{
+		FluidModel* model = sim->getFluidModel(modelIdx);
+		FluidModelCopy* modelCopy = m_fluidModelCopies[modelIdx];
+
+		const unsigned int numBorderParticles = level < REGION_LEVELS_COUNT - 1 ? m_particleGrid.getLevelBorderParticleCounts(level, modelIdx) : 0;
+		const unsigned int numActiveParticles = particleCounts[modelIdx] + numBorderParticles;
 		model->setNumActiveParticles(numActiveParticles);
 		modelCopy->setNumActiveParticles(numActiveParticles);
+
+		const unsigned int* modelParticleIndices = particleIndices[modelIdx].data();
+		model->setParticleIndices(modelParticleIndices);
+		modelCopy->setParticleIndices(modelParticleIndices);
 	}
 }
 

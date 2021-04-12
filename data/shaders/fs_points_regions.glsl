@@ -13,8 +13,10 @@ In;
 
 out vec4 out_color;
 
-const vec3 levelColors[4] =
-vec3[4](
+const uint NUM_COLORS = 4u;
+
+const vec3 levelColors[NUM_COLORS] =
+vec3[NUM_COLORS](
     vec3(1.0, 0.0, 0.0),
     vec3(1.0, 1.0, 0.0),
     vec3(0.0, 0.0, 1.0),
@@ -37,5 +39,7 @@ void main()
     gl_FragDepth = (depth + 1.0) / 2.0;
 
 	// compute final color
-    out_color = vec4(levelColors[In.level + In.isBorder], 1.0);
+    uint colorIndex = In.level * (1u - In.isBorder) + (NUM_COLORS - 1u) * In.isBorder;
+    // uint colorIndex = mix(In.level, NUM_COLORS - 1u, In.isBorder);
+    out_color = vec4(levelColors[colorIndex], 1.0);
 }

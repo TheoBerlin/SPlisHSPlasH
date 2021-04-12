@@ -315,6 +315,8 @@ namespace SPH
 		bool is2DSimulation() { return m_sim2D; }
 		bool zSortEnabled() { return m_enableZSort; }
 
+		FORCE_INLINE Real getMaxTimeStepSize() const { return m_cflMaxTimeStepSize; }
+
 		void setParticleRadius(Real val);
 		Real getParticleRadius() const { return m_particleRadius; }
 		Real getSupportRadius() const { return m_supportRadius; }

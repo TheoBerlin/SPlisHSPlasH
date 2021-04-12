@@ -26,8 +26,13 @@ namespace SPH
 		unsigned int m_iterationsV;
 		Real m_maxErrorV;
 		unsigned int m_maxIterationsV;
+		/*	m_stepNr helps keep track of which regional levels need to be calculated in the current step.
+			Has a value within the interval [0, TIMESTEP_MULTIPLIER^(LEVEL_COUNT - 1)). */
+		unsigned int m_stepNr;
+		unsigned int m_lastCalculatedLevel;
 
 		std::vector<FluidModelCopy*> m_fluidModelCopies;
+		std::vector<FluidModel*> m_originalFluidModel;
 
 		void checkVelocities();
 		void computeDFSPHFactor(const unsigned int fluidModelIndex);
@@ -48,7 +53,8 @@ namespace SPH
 		/** Perform the neighborhood search for all fluid particles.
 		*/
 		void performNeighborhoodSearch();
-		void stepLevel(unsigned int level, Real dt);
+		void calculateLevel(unsigned int level, Real dt);
+		void interpolateBorderParticles(unsigned int level);
 
 		void setActiveParticles(unsigned int level);
 

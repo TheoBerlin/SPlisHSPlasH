@@ -86,7 +86,7 @@ Simulation::Simulation ()
 	m_simulationMethodChanged = NULL;
 
 	m_sim2D = false;
-	m_enableZSort = true;
+	m_enableZSort = false;
 
 	m_animationFieldSystem = new AnimationFieldSystem();
 	m_boundaryHandlingMethod = static_cast<int>(BoundaryHandlingMethods::Bender2019);
@@ -380,8 +380,16 @@ void Simulation::setKernel(int val)
 
 void Simulation::toggleRegionColors(bool enabled)
 {
-	TimeStepADFSPH* ADFSPH = reinterpret_cast<TimeStepADFSPH*>(m_timeStep);
-	ADFSPH->getParticleGrid().toggleRegionColors(enabled);
+	if (m_simulationMethod == SimulationMethods::DFSPH)
+	{
+		TimeStepDFSPH* DFSPH = reinterpret_cast<TimeStepDFSPH*>(m_timeStep);
+		DFSPH->getParticleGrid().toggleRegionColors(enabled);
+	}
+	else
+	{
+		TimeStepADFSPH* ADFSPH = reinterpret_cast<TimeStepADFSPH*>(m_timeStep);
+		ADFSPH->getParticleGrid().toggleRegionColors(enabled);
+	}
 }
 
 void Simulation::updateTimeStepSize()

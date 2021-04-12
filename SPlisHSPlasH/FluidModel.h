@@ -46,8 +46,14 @@
 	#define compute_Vj_gradW() \
 		const Vector3f8 &V_gradW = CubicKernel_AVX::gradW(xi_avx - xj_avx) * Vj_avx;
 
+	#define compute_Vj_gradW_adfsph() \
+		const Vector3f8 &V_gradW = CubicKernel_AVX::gradW(xi_avx - xj_avx) * Vj_avx;
+
 	// compute the value Vj * gradW assuming that xj and Vj are already available
 	#define compute_Vj_gradW_samephase() \
+		const Vector3f8 &V_gradW = CubicKernel_AVX::gradW(xi_avx - xj_avx) * Vj_avx;
+
+	#define compute_Vj_gradW_samephasead_adfsph() \
 		const Vector3f8 &V_gradW = CubicKernel_AVX::gradW(xi_avx - xj_avx) * Vj_avx;
 #endif
 

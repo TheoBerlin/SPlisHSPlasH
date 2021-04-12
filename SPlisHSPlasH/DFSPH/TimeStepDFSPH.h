@@ -70,6 +70,8 @@ namespace SPH
 		virtual void reset();
 
 		virtual void resize();
+
+		FORCE_INLINE ParticleGrid& getParticleGrid() { return m_particleGrid; }
 	};
 }
 

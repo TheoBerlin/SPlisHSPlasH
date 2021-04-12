@@ -354,9 +354,7 @@ void SPH::FluidModel::copyParticleData(const FluidModel* fluidModel)
 	m_particleState = fluidModel->m_particleState;
 
 #ifdef USE_PERFORMANCE_OPTIMIZATION
-	m_precomp_V_gradW = fluidModel->m_precomp_V_gradW;
-	m_precompIndices = fluidModel->m_precompIndices;
-	m_precompIndicesSamePhase = fluidModel->m_precompIndicesSamePhase;
+	copyPrecomputedParticleData(fluidModel);
 #endif
 
     m_V = fluidModel->m_V;

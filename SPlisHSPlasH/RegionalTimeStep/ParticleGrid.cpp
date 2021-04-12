@@ -54,6 +54,9 @@ void ParticleGrid::init()
         m_levelParticleCounts[level].resize(nModels);
         m_levelUnionsParticleCounts[level].resize(nModels);
     }
+
+    for (unsigned int level = 0; level < REGION_LEVELS_COUNT - 1; level++)
+        m_levelBorderParticleCounts[level].resize(nModels);
 }
 
 void ParticleGrid::determineRegions()
@@ -64,6 +67,7 @@ void ParticleGrid::determineRegions()
     defineCellLevels();
     defineParticleLevels();
 
+    /* These two functions could be executed in parallel */
     identifyRegionBorders();
     defineLevelParticleIndices();
 }
@@ -93,6 +97,134 @@ void ParticleGrid::toggleRegionColors(bool enabled)
         {
             FluidModel* model = sim->getFluidModel(modelIdx);
             model->removeFieldByName("is border");
+        }
+    }
+}
+
+void ParticleGrid::calculateLevelBorder(unsigned int level)
+{
+    Simulation* sim = Simulation::getCurrent();
+    const unsigned int nModels = sim->numberOfFluidModels();
+
+    for (unsigned int modelIdx = 0; modelIdx < nModels; modelIdx++)
+    {
+        const std::vector<GridCell>& cells = m_cells[modelIdx];
+        const std::vector<CellParticlePair>& cellParticlePairs = m_cellParticlePairs[modelIdx];
+
+        // Start writing border particle indices where the higher level indices are currently stored
+        const unsigned int indexStartPos = m_levelUnionsParticleCounts[level][modelIdx];
+        unsigned int borderParticleCount = 0;
+
+        if (indexStartPos < sim->getFluidModel(modelIdx)->getNumActiveParticles0())
+        {
+            unsigned int* borderParticleIndices = &m_particleIndices[modelIdx][indexStartPos];
+
+            const std::vector<unsigned int>& borderLevels = m_regionBorderLevels[modelIdx];
+
+            for (unsigned int cellIdx = 0; cellIdx < cells.size(); cellIdx++)
+            {
+                const unsigned int borderLevel = borderLevels[cellIdx];
+                if (borderLevel == level)
+                {
+                    const GridCell& cell = cells[cellIdx];
+                    unsigned int pairIdx = cell.pairIndexBegin;
+                    const unsigned int pairIdxEnd = cell.pairIndexEnd;
+
+                    while (pairIdx < pairIdxEnd)
+                    {
+                        const unsigned int particleIdx = cellParticlePairs[pairIdx++].particleIndex;
+                        borderParticleIndices[borderParticleCount++];
+                    }
+                }
+            }
+        }
+
+        // Update particle counts
+        m_levelBorderParticleCounts[level][modelIdx] = borderParticleCount;
+    }
+}
+
+void ParticleGrid::defineLevelParticleIndices()
+{
+    Simulation *simulation = Simulation::getCurrent();
+    const unsigned int numFluidModels = simulation->numberOfFluidModels();
+
+    for (unsigned int modelIdx = 0; modelIdx < numFluidModels; modelIdx++)
+    {
+        // #pragma omp parallel num_threads(2) default(shared)
+        {
+            std::vector<unsigned int> &particleLevels = m_particleLevels[modelIdx];
+            std::vector<unsigned int>& levelParticleIndices = m_particleIndices[modelIdx];
+
+            unsigned int levelIndicesPos = 0;
+
+            // const int threadID = omp_get_thread_num();
+            // if (threadID == 0)
+            for (unsigned int level = 0; level < REGION_LEVELS_COUNT; level++)
+            {
+                std::vector<unsigned int> &levelUnionsParticleCounts = m_levelUnionsParticleCounts[level];
+
+                const unsigned int indicesPosBegin = levelIndicesPos;
+
+                const unsigned int particleCount = particleLevels.size();
+                for (unsigned int particleIdx = 0; particleIdx < particleCount; particleIdx++)
+                {
+                    if (particleLevels[particleIdx] == level)
+                    {
+                        levelParticleIndices[levelIndicesPos++] = particleIdx;
+                    }
+                }
+
+                m_levelParticleCounts[level][modelIdx] = levelIndicesPos - indicesPosBegin;
+                m_levelUnionsParticleCounts[level][modelIdx] = m_levelParticleCounts[level][modelIdx] +
+                    (level > 0 ? m_levelUnionsParticleCounts[level - 1][modelIdx] : 0);
+            }
+        }
+    }
+}
+
+void ParticleGrid::defineLevelParticleIndices(const unsigned int* startingIndices, unsigned int level)
+{
+    Simulation *simulation = Simulation::getCurrent();
+    const unsigned int numFluidModels = simulation->numberOfFluidModels();
+
+    for (unsigned int modelIdx = 0; modelIdx < numFluidModels; modelIdx++)
+    {
+        // #pragma omp parallel num_threads(2) default(shared)
+        {
+            std::vector<unsigned int> &particleLevels = m_particleLevels[modelIdx];
+            const unsigned int startingIndex = startingIndices ? startingIndices[modelIdx] : 0;
+            if (startingIndex >= m_particleIndices[modelIdx].size())
+            {
+                return;
+            }
+
+            unsigned int* levelParticleIndices = &m_particleIndices[modelIdx][startingIndex];
+
+            unsigned int levelIndicesPos = 0;
+
+            // const int threadID = omp_get_thread_num();
+            // if (threadID == 0)
+            std::vector<unsigned int> &levelUnionsParticleCounts = m_levelUnionsParticleCounts[level];
+
+            const unsigned int indicesPosBegin = levelIndicesPos;
+
+            const unsigned int particleCount = particleLevels.size();
+            for (unsigned int particleIdx = 0; particleIdx < particleCount; particleIdx++)
+            {
+                if (particleLevels[particleIdx] == level)
+                {
+                    levelParticleIndices[levelIndicesPos++] = particleIdx;
+                    if (startingIndex + levelIndicesPos > m_particleIndices[modelIdx].size())
+                    {
+                        int a = 0;
+                    }
+                }
+            }
+
+            m_levelParticleCounts[level][modelIdx] = levelIndicesPos - indicesPosBegin;
+            m_levelUnionsParticleCounts[level][modelIdx] = m_levelParticleCounts[level][modelIdx] +
+                (level > 0 ? m_levelUnionsParticleCounts[level - 1][modelIdx] : 0);
         }
     }
 }
@@ -257,6 +389,11 @@ void ParticleGrid::defineCellLevels()
         #pragma omp parallel default(shared)
         {
             const Real logN = std::logf(LEVEL_TIMESTEP_MULTIPLIER);
+            const Real timeStepSize = TimeManager::getCurrent()->getTimeStepSize();
+            const Real maxTimeStepSize = Simulation::getCurrent()->getMaxTimeStepSize();
+
+            // Limit what regional levels are enabled this frame, to stay within the max time step size
+            const unsigned int maxRegionalLevel = std::min<unsigned int>(REGION_LEVELS_COUNT - 1, unsigned int(std::log2(maxTimeStepSize  / timeStepSize) / logN));
 
             // Use each block's max velocity to determine its level
             #pragma omp for schedule(static)
@@ -264,7 +401,7 @@ void ParticleGrid::defineCellLevels()
             {
                 GridCell &cell = fluidModelCells[cellIdx];
                 cell.regionLevel = unsigned int(std::logf(m_maxSpeedSquared / cell.maxSpeedSquared) / logN);
-                cell.regionLevel = std::min<unsigned int>(cell.regionLevel, REGION_LEVELS_COUNT - 1);
+                cell.regionLevel = std::min(cell.regionLevel, maxRegionalLevel);
             }
         }
     }
@@ -297,45 +434,6 @@ void ParticleGrid::defineParticleLevels()
                     const unsigned int particleIdx = cellParticlePairs[pairIdx++].particleIndex;
                     particleLevels[particleIdx] = cell.regionLevel;
                 }
-            }
-        }
-    }
-}
-
-void ParticleGrid::defineLevelParticleIndices()
-{
-    Simulation *simulation = Simulation::getCurrent();
-    const unsigned int numFluidModels = simulation->numberOfFluidModels();
-
-    for (unsigned int modelIdx = 0; modelIdx < numFluidModels; modelIdx++)
-    {
-        // #pragma omp parallel num_threads(2) default(shared)
-        {
-            std::vector<unsigned int> &particleLevels = m_particleLevels[modelIdx];
-            std::vector<unsigned int> &levelParticleIndices = m_particleIndices[modelIdx];
-
-            unsigned int levelIndicesPos = 0;
-
-            // const int threadID = omp_get_thread_num();
-            // if (threadID == 0)
-            for (unsigned int level = 0; level < REGION_LEVELS_COUNT; level++)
-            {
-                std::vector<unsigned int> &levelUnionsParticleCounts = m_levelUnionsParticleCounts[level];
-
-                const unsigned int indicesPosBegin = levelIndicesPos;
-
-                const unsigned int particleCount = particleLevels.size();
-                for (unsigned int particleIdx = 0; particleIdx < particleCount; particleIdx++)
-                {
-                    if (particleLevels[particleIdx] == level)
-                    {
-                        levelParticleIndices[levelIndicesPos++] = particleIdx;
-                    }
-                }
-
-                m_levelParticleCounts[level][modelIdx] = levelIndicesPos - indicesPosBegin;
-                m_levelUnionsParticleCounts[level][modelIdx] = m_levelParticleCounts[level][modelIdx] +
-                    (level > 0 ? m_levelUnionsParticleCounts[level - 1][modelIdx] : 0);
             }
         }
     }
@@ -384,9 +482,9 @@ void ParticleGrid::identifyRegionBorders()
                 const int offsetStartY = std::max(-1, -cellPosY);
                 const int offsetStartZ = std::max(-1, -cellPosZ);
 
-                const int offsetEndX = std::min(1, m_resolution.x() - cellPosX);
-                const int offsetEndY = std::min(1, m_resolution.y() - cellPosY);
-                const int offsetEndZ = std::min(1, m_resolution.z() - cellPosZ);
+                const int offsetEndX = std::min(2, m_resolution.x() - cellPosX);
+                const int offsetEndY = std::min(2, m_resolution.y() - cellPosY);
+                const int offsetEndZ = std::min(2, m_resolution.z() - cellPosZ);
 
                 const unsigned int cellLevel = cell.regionLevel;
 
@@ -404,30 +502,27 @@ void ParticleGrid::identifyRegionBorders()
                                 this cell is part of a border. */
                             if (neighborCell.pairIndexBegin != neighborCell.pairIndexEnd && neighborCell.regionLevel < cellLevel)
                             {
-                                borderLevels[cellIdx] = cellLevel;
-
-                                if (!m_isBorder.empty())
-                                {
-                                    // Change the color of the cell's particles
-                                    unsigned int pairIdx = cell.pairIndexBegin;
-                                    const unsigned int pairIdxEnd = cell.pairIndexEnd;
-
-                                    std::vector<unsigned int>& isBorder = m_isBorder[modelIdx];
-                                    std::vector<CellParticlePair>& cellParticlePairs = m_cellParticlePairs[modelIdx];
-
-                                    while (pairIdx < pairIdxEnd)
-                                    {
-                                        const unsigned int particleIdx = cellParticlePairs[pairIdx++].particleIndex;
-                                        isBorder[particleIdx] = 1;
-                                    }
-                                }
-
-                                goto nextCell;
+                                borderLevels[cellIdx] = std::min(borderLevels[cellIdx], neighborCell.regionLevel);
                             }
                         }
                     }
                 }
-            nextCell: ;
+
+                if (!m_isBorder.empty() && borderLevels[cellIdx] != UINT32_MAX)
+                {
+                    // Change the color of the cell's particles
+                    unsigned int pairIdx = cell.pairIndexBegin;
+                    const unsigned int pairIdxEnd = cell.pairIndexEnd;
+
+                    std::vector<unsigned int>& isBorder = m_isBorder[modelIdx];
+                    std::vector<CellParticlePair>& cellParticlePairs = m_cellParticlePairs[modelIdx];
+
+                    while (pairIdx < pairIdxEnd)
+                    {
+                        const unsigned int particleIdx = cellParticlePairs[pairIdx++].particleIndex;
+                        isBorder[particleIdx] = 1;
+                    }
+                }
             }
         }
     }
