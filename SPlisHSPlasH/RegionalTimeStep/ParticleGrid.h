@@ -41,6 +41,10 @@ namespace SPH
             /*  Finds the border particles between level and level + 1. Updates the particle counts and particle
                 indices to contain these border particles. */
             void calculateLevelBorder(unsigned int level);
+
+            // Writes border particle indices to m_particleIndices
+            void enableBorderParticleIndices(unsigned int modelIdx, unsigned int level);
+
             void defineLevelParticleIndices();
 
             /*  Defines particle indices for a specific level. startingIndices contains the positions at which the
@@ -53,6 +57,8 @@ namespace SPH
             FORCE_INLINE unsigned int getLevelBorderParticleCounts(unsigned int level, unsigned int modelIdx) const  { return m_levelBorderParticleCounts[level][modelIdx]; }
             FORCE_INLINE const Vector3f& getGridSize() const { return m_gridSize; }
             FORCE_INLINE unsigned int getParticleLevel(unsigned int modelIdx, unsigned int particleIdx) const { return m_particleLevels[modelIdx][particleIdx]; }
+
+            FORCE_INLINE bool isBorder(unsigned int fluidModelIndex, unsigned int i) const { return m_isBorder[fluidModelIndex][i] == 1; }
 
         private:
             void initGridSizeAndResolution();
@@ -70,6 +76,9 @@ namespace SPH
             void defineParticleLevels();
 
             void identifyRegionBorders();
+
+            // Writes border particle indices to m_borderParticleIndices
+            void writeBorderIndices();
 
         private:
             Vector3i m_resolution;
@@ -92,6 +101,11 @@ namespace SPH
 
             // Particle indices, sorted by regional level
             std::vector<std::vector<unsigned int>> m_particleIndices;
+
+            /*  Indices to particles that belong to borders. Sorted by the lowest neighboring level.
+                Use m_levelBorderParticleCounts to find each level's bordering particles. */
+            std::vector<std::vector<unsigned int>> m_borderParticleIndices;
+
             /*  The amount of particles per level. The latter contains the particle count of each level and their
                 sublevels. */
             std::array<std::vector<unsigned int>, REGION_LEVELS_COUNT> m_levelParticleCounts;

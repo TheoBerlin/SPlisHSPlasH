@@ -36,6 +36,7 @@ void ParticleGrid::init()
     m_cellParticlePairs.resize(nModels);
     m_regionBorderLevels.resize(nModels);
     m_particleIndices.resize(nModels);
+    m_borderParticleIndices.resize(nModels);
     m_particleLevels.resize(nModels);
     for (unsigned int modelIndex = 0; modelIndex < nModels; modelIndex++)
     {
@@ -44,6 +45,7 @@ void ParticleGrid::init()
 		m_cellParticlePairs[modelIndex].resize(nParticles);
         m_regionBorderLevels[modelIndex].resize(m_cells[modelIndex].size());
         m_particleIndices[modelIndex].resize(nParticles);
+        m_borderParticleIndices[modelIndex].reserve(nParticles);
 
         m_particleLevels[modelIndex].resize(nParticles);
         fluidModel->addField({ "particle levels", FieldType::UInt, [this, modelIndex](unsigned int particleIdx) { return &m_particleLevels[modelIndex][particleIdx]; } });
@@ -70,6 +72,8 @@ void ParticleGrid::determineRegions()
     /* These two functions could be executed in parallel */
     identifyRegionBorders();
     defineLevelParticleIndices();
+
+    // writeBorderIndices();
 }
 
 void ParticleGrid::toggleRegionColors(bool enabled)
@@ -133,7 +137,7 @@ void ParticleGrid::calculateLevelBorder(unsigned int level)
                     while (pairIdx < pairIdxEnd)
                     {
                         const unsigned int particleIdx = cellParticlePairs[pairIdx++].particleIndex;
-                        borderParticleIndices[borderParticleCount++];
+                        borderParticleIndices[borderParticleCount++] = particleIdx;
                     }
                 }
             }
@@ -141,6 +145,28 @@ void ParticleGrid::calculateLevelBorder(unsigned int level)
 
         // Update particle counts
         m_levelBorderParticleCounts[level][modelIdx] = borderParticleCount;
+    }
+}
+
+void ParticleGrid::enableBorderParticleIndices(unsigned int modelIdx, unsigned int level)
+{
+    // Start writing border particle indices where the higher level indices are currently stored
+    const unsigned int indexStartPos = m_levelUnionsParticleCounts[level][modelIdx];
+    const unsigned int levelBorderParticleCount = m_levelBorderParticleCounts[level][modelIdx];
+
+    if (levelBorderParticleCount != 0 && indexStartPos < m_particleIndices[modelIdx].size())
+    {
+        // Calculate the index from where to start copying border particle indices
+        unsigned int borderParticlesStartIdx = 0;
+        for (unsigned int lowerLevel = 0; lowerLevel < level; lowerLevel++)
+        {
+            borderParticlesStartIdx += m_levelBorderParticleCounts[lowerLevel][modelIdx];
+        }
+
+        unsigned int* particleIndices = &m_particleIndices[modelIdx][indexStartPos];
+        const unsigned int* borderParticleIndices = &m_borderParticleIndices[modelIdx][borderParticlesStartIdx];
+
+        std::copy_n(borderParticleIndices, levelBorderParticleCount, particleIndices);
     }
 }
 
@@ -162,8 +188,6 @@ void ParticleGrid::defineLevelParticleIndices()
             // if (threadID == 0)
             for (unsigned int level = 0; level < REGION_LEVELS_COUNT; level++)
             {
-                std::vector<unsigned int> &levelUnionsParticleCounts = m_levelUnionsParticleCounts[level];
-
                 const unsigned int indicesPosBegin = levelIndicesPos;
 
                 const unsigned int particleCount = particleLevels.size();
@@ -322,6 +346,7 @@ void ParticleGrid::findCellParticlePairs()
                     cellParticleIndices[i] = { cellIndex, (unsigned int)i };
 
                     // Update cell's max speed
+                    // TODO: Move this, data race!
                     GridCell &cell = fluidModelCells[cellIndex];
 					const Vector3r &particleVelocity = fluidModel->getVelocity(i);
                     const Vector3r &particleAcceleration = fluidModel->getAcceleration(i);
@@ -357,7 +382,6 @@ void ParticleGrid::findCellParticlePairs()
             GridCell &cell = gridCells[cellIndex];
             cell.pairIndexBegin = cellParticlePairIndex;
 
-            const unsigned int beginPairIndex = cellParticlePairIndex;
             while (cellParticlePairIndex < cellParticlePairs.size() && cellParticlePairs[cellParticlePairIndex].cellIndex == cellIndex)
                 cellParticlePairIndex += 1;
 
@@ -524,6 +548,48 @@ void ParticleGrid::identifyRegionBorders()
                     }
                 }
             }
+        }
+    }
+}
+
+void ParticleGrid::writeBorderIndices()
+{
+    Simulation *simulation = Simulation::getCurrent();
+    const unsigned int numFluidModels = simulation->numberOfFluidModels();
+
+    for (unsigned int modelIdx = 0; modelIdx < numFluidModels; modelIdx++)
+    {
+        std::vector<unsigned int>& borderParticleIndices = m_borderParticleIndices[modelIdx];
+        borderParticleIndices.clear();
+
+        std::vector<unsigned int> &borderLevels = m_regionBorderLevels[modelIdx];
+        std::vector<GridCell> &gridCells = m_cells[modelIdx];
+        std::vector<CellParticlePair>& cellParticlePairs = m_cellParticlePairs[modelIdx];
+
+        const unsigned int cellCount = borderLevels.size();
+
+        for (unsigned int level = 0; level < REGION_LEVELS_COUNT - 1; level++)
+        {
+            const unsigned int indicesInitialSize = borderParticleIndices.size();
+
+            for (unsigned int cellIdx = 0; cellIdx < cellCount; cellIdx++)
+            {
+                if (borderLevels[cellIdx] == level)
+                {
+                    const GridCell &cell = gridCells[cellIdx];
+
+                    unsigned int pairIdx = cell.pairIndexBegin;
+                    const unsigned int pairIdxEnd = cell.pairIndexEnd;
+
+                    while (pairIdx < pairIdxEnd)
+                    {
+                        const unsigned int particleIdx = cellParticlePairs[pairIdx++].particleIndex;
+                        borderParticleIndices.push_back(particleIdx);
+                    }
+                }
+            }
+
+            m_levelBorderParticleCounts[level][modelIdx] = borderParticleIndices.size() - indicesInitialSize;
         }
     }
 }

@@ -329,6 +329,9 @@ void TimeStepDFSPH::divergenceSolve()
 			avg_density_err = 0.0;
 			divergenceSolveIteration(i, avg_density_err);
 
+			if (TimeManager::getCurrent()->getTime() > 0.47f)
+				debugParticle(0, 6681);
+
 			// Maximal allowed density fluctuation
 			// use maximal density error divided by time step size
 			const Real eta = (static_cast<Real>(1.0) / h) * maxError * static_cast<Real>(0.01) * density0;  // maxError is given in percent
@@ -1726,4 +1729,69 @@ void TimeStepDFSPH::emittedParticles(FluidModel *model, const unsigned int start
 void TimeStepDFSPH::resize()
 {
 	m_simulationData.init();
+}
+
+void TimeStepDFSPH::debugParticle(unsigned int fluidModelIndex, unsigned int i)
+{
+	Simulation* sim = Simulation::getCurrent();
+	const unsigned int nFluids = sim->numberOfFluidModels();
+	FluidModel* model = sim->getFluidModel(fluidModelIndex);
+
+	const bool isBorderParticle = m_particleGrid.isBorder(fluidModelIndex, i);
+	const unsigned int particleLevel = m_particleGrid.getParticleLevel(fluidModelIndex, i);
+	const Real kappa = m_simulationData.getKappa(fluidModelIndex, i);
+	const Real factor = m_simulationData.getFactor(fluidModelIndex, i);
+	const Real dens = model->getDensity(i);
+	const Real densAdv = m_simulationData.getDensityAdv(fluidModelIndex, i);
+
+	const unsigned int numNeightbors = sim->numberOfNeighbors(fluidModelIndex, 0, i);
+
+	struct Neighbor {
+		unsigned int NeighborLevel;
+		bool IsBorder;
+		Real Kappa;
+	};
+
+	std::vector<Neighbor> neighbors;
+	neighbors.reserve(numNeightbors);
+
+	const Vector3r& xi = model->getPosition(i);
+
+	Real maxNeighborDist = 0.0f;
+	forall_fluid_neighbors(
+		maxNeighborDist = std::max(maxNeighborDist, (xi - xj).norm());
+
+		neighbors.push_back(
+			Neighbor({
+				m_particleGrid.getParticleLevel(pid, neighborIndex),
+				m_particleGrid.isBorder(fluidModelIndex, i),
+				m_simulationData.getKappa(pid, neighborIndex)
+			})
+		);
+	)
+
+	const Real supportRadius = sim->getSupportRadius();
+
+	const unsigned int levelParticleCount = m_particleGrid.getLevelParticleCounts(0)[fluidModelIndex];
+	const unsigned int numParticles = model->numActiveParticles();
+	const unsigned int* particleIndices = model->getParticleIndices();
+
+	for (unsigned int particleNr = 0; particleNr < levelParticleCount; particleNr++)
+	{
+		const unsigned int j = particleIndices[particleNr];
+		const unsigned int jParticleLevel = m_particleGrid.getParticleLevel(fluidModelIndex, j);
+		const bool jIsBorder = m_particleGrid.isBorder(fluidModelIndex, j);
+		const Real jKappa = m_simulationData.getKappa(fluidModelIndex, j);
+		const Real jFactor = m_simulationData.getFactor(fluidModelIndex, j);
+		const Real jDens = model->getDensity(j);
+		const Real jDensAdv = m_simulationData.getDensityAdv(fluidModelIndex, j);
+
+		if (jParticleLevel != 0 && !jIsBorder)
+			int a = 0;
+	}
+
+	if (particleLevel != 0 && !isBorderParticle)
+		int a = 0;
+
+	int a = 0;
 }

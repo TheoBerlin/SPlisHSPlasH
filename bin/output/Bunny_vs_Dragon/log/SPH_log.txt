@@ -1,62 +1,30 @@
-[2021-04-12 14:46:41] Info:    SPlisHSPlasH version: 2.9.1
-[2021-04-12 14:46:41] Debug:   Git refspec:          refs/heads/regional_steps
-[2021-04-12 14:46:41] Debug:   Git SHA1:             818aef8dc064aa1273ded4a414d79871d3487137
-[2021-04-12 14:46:41] Debug:   Git status:           DIRTY
-[2021-04-12 14:46:41] Debug:   Host name:            DESKTOP-KSQC32J
-[2021-04-12 14:46:41] Info:    Output directory: D:/Documents/SPlisHSPlasH/bin/output/Bunny_vs_Dragon
-[2021-04-12 14:46:41] Info:    Load scene file: D:\Documents\SPlisHSPlasH\data\Scenes\Bunny_vs_Dragon.json
-[2021-04-12 14:46:41] Info:    Initialize static boundary simulation
-[2021-04-12 14:46:41] Info:    Initialize fluid particles
-[2021-04-12 14:46:41] Info:    Number of fluid particles: 7706
-[2021-04-12 14:46:41] Info:    OpenGL version 4.6
-[2021-04-12 14:46:41] Info:    Vendor: NVIDIA Corporation
-[2021-04-12 14:46:41] Info:    Renderer: GeForce RTX 2080 Ti/PCIe/SSE2
-[2021-04-12 14:46:41] Info:    Version: 4.6.0 NVIDIA 460.89
-[2021-04-12 14:46:41] Info:    ---------------------------------------------------------------------------
+[2021-04-16 16:53:31] Info:    SPlisHSPlasH version: 2.9.1
+[2021-04-16 16:53:31] Debug:   Git refspec:          refs/heads/regional_steps
+[2021-04-16 16:53:31] Debug:   Git SHA1:             c8d9e82dc8436eb03cf4ecaeadb55e47944d1859
+[2021-04-16 16:53:31] Debug:   Git status:           DIRTY
+[2021-04-16 16:53:31] Debug:   Host name:            DESKTOP-KSQC32J
+[2021-04-16 16:53:31] Info:    Output directory: D:/Documents/SPlisHSPlasH/bin/output/Bunny_vs_Dragon
+[2021-04-16 16:53:31] Info:    Load scene file: D:\Documents\SPlisHSPlasH\data\Scenes\Bunny_vs_Dragon.json
+[2021-04-16 16:53:31] Info:    Initialize static boundary simulation
+[2021-04-16 16:53:31] Info:    Initialize fluid particles
+[2021-04-16 16:53:31] Info:    Number of fluid particles: 7706
+[2021-04-16 16:53:31] Info:    OpenGL version 4.6
+[2021-04-16 16:53:31] Info:    Vendor: NVIDIA Corporation
+[2021-04-16 16:53:31] Info:    Renderer: GeForce RTX 2080 Ti/PCIe/SSE2
+[2021-04-16 16:53:31] Info:    Version: 4.6.0 NVIDIA 460.89
+[2021-04-16 16:53:31] Info:    ---------------------------------------------------------------------------
 
-[2021-04-12 14:46:41] Info:    ---------------------------------------------------------------------------
+[2021-04-16 16:53:31] Info:    ---------------------------------------------------------------------------
 
-[2021-04-12 14:46:41] Info:    Loading D:/Documents/SPlisHSPlasH/data/models/UnitBox.obj
-[2021-04-12 14:46:41] Info:    Number of triangles: 12
-[2021-04-12 14:46:41] Info:    Number of vertices: 8
-[2021-04-12 14:46:41] Info:    Loaded cached volume map: D:/Documents/SPlisHSPlasH/data/Scenes/Cache/UnitBox_sb_vm_0.025_s6_4_3_r30_30_20_i1_t0.cdm
-[2021-04-12 14:46:41] Info:    Loading D:/Documents/SPlisHSPlasH/data/models/Dragon_50k.obj
-[2021-04-12 14:46:41] Info:    Number of triangles: 50000
-[2021-04-12 14:46:41] Info:    Number of vertices: 25007
-[2021-04-12 14:46:41] Info:    Loaded cached volume map: D:/Documents/SPlisHSPlasH/data/Scenes/Cache/Dragon_50k_sb_vm_0.025_s1_1_1_r20_20_20_i0_t0.cdm
-[2021-04-12 14:46:41] Info:    Loading D:/Documents/SPlisHSPlasH/data/models/Dragon_50k.obj
-[2021-04-12 14:46:42] Info:    Number of triangles: 50000
-[2021-04-12 14:46:42] Info:    Number of vertices: 25007
-[2021-04-12 14:46:42] Info:    Loaded cached volume map: D:/Documents/SPlisHSPlasH/data/Scenes/Cache/Dragon_50k_sb_vm_0.025_s1_1_1_r20_20_20_i0_t0.cdm
-[2021-04-12 14:47:38] Info:    Sum of emitted particles: 0
-[2021-04-12 14:47:38] Info:    Sum of reused particles: 0
-[2021-04-12 14:47:38] Info:    Sum of emitted particles: 0
-[2021-04-12 14:47:38] Info:    Sum of reused particles: 0
-[2021-04-12 14:47:38] Info:    Average time: neighborhood_search: 1.61441 ms
-[2021-04-12 14:47:38] Info:    Average time: computeVolumeAndBoundaryX: 0.870746 ms
-[2021-04-12 14:47:38] Info:    Average time: computeDFSPHFactor: 0.0755554 ms
-[2021-04-12 14:47:38] Info:    Average time: divergenceSolve: 0.000178291 ms
-[2021-04-12 14:47:38] Info:    Average time: pressureSolve: 0.907347 ms
-[2021-04-12 14:47:38] Info:    Average time: emitParticles: 0.000443803 ms
-[2021-04-12 14:47:38] Info:    Average time: animateParticles: 0.000642415 ms
-[2021-04-12 14:47:38] Info:    Average time: SimStep: 7.0594 ms
-[2021-04-12 14:47:38] Info:    ---------------------------------------------------------------------------
-
-[2021-04-12 14:47:38] Info:    Time sum: neighborhood_search: 11333.2 ms
-[2021-04-12 14:47:38] Info:    Time sum: computeVolumeAndBoundaryX: 6112.64 ms
-[2021-04-12 14:47:38] Info:    Time sum: computeDFSPHFactor: 530.399 ms
-[2021-04-12 14:47:38] Info:    Time sum: divergenceSolve: 1.2516 ms
-[2021-04-12 14:47:38] Info:    Time sum: pressureSolve: 6369.57 ms
-[2021-04-12 14:47:38] Info:    Time sum: emitParticles: 2.077 ms
-[2021-04-12 14:47:38] Info:    Time sum: animateParticles: 3.0065 ms
-[2021-04-12 14:47:38] Info:    Time sum: SimStep: 33038 ms
-[2021-04-12 14:47:38] Info:    ---------------------------------------------------------------------------
-
-[2021-04-12 14:47:38] Info:    Average number: DFSPH - iterations: 2.02664
-[2021-04-12 14:47:38] Info:    Average number: Time step size: 0.00471542
-[2021-04-12 14:47:38] Info:    ---------------------------------------------------------------------------
-
-[2021-04-12 14:47:38] Info:    Total number: DFSPH - iterations: 14227
-[2021-04-12 14:47:38] Info:    Total number: Time step size: 22.0682
-[2021-04-12 14:47:38] Info:    ---------------------------------------------------------------------------
-
+[2021-04-16 16:53:31] Info:    Loading D:/Documents/SPlisHSPlasH/data/models/UnitBox.obj
+[2021-04-16 16:53:31] Info:    Number of triangles: 12
+[2021-04-16 16:53:31] Info:    Number of vertices: 8
+[2021-04-16 16:53:31] Info:    Loaded cached volume map: D:/Documents/SPlisHSPlasH/data/Scenes/Cache/UnitBox_sb_vm_0.025_s6_4_3_r30_30_20_i1_t0.cdm
+[2021-04-16 16:53:31] Info:    Loading D:/Documents/SPlisHSPlasH/data/models/Dragon_50k.obj
+[2021-04-16 16:53:32] Info:    Number of triangles: 50000
+[2021-04-16 16:53:32] Info:    Number of vertices: 25007
+[2021-04-16 16:53:32] Info:    Loaded cached volume map: D:/Documents/SPlisHSPlasH/data/Scenes/Cache/Dragon_50k_sb_vm_0.025_s1_1_1_r20_20_20_i0_t0.cdm
+[2021-04-16 16:53:33] Info:    Loading D:/Documents/SPlisHSPlasH/data/models/Dragon_50k.obj
+[2021-04-16 16:53:34] Info:    Number of triangles: 50000
+[2021-04-16 16:53:34] Info:    Number of vertices: 25007
+[2021-04-16 16:53:34] Info:    Loaded cached volume map: D:/Documents/SPlisHSPlasH/data/Scenes/Cache/Dragon_50k_sb_vm_0.025_s1_1_1_r20_20_20_i0_t0.cdm

@@ -62,6 +62,8 @@ namespace SPH
 
 		virtual void initParameters();
 
+		void debugParticle(unsigned int fluidModelIndex, unsigned int i);
+
 	public:
 		static int SOLVER_ITERATIONS_V;
 		static int MAX_ITERATIONS_V;

@@ -13,7 +13,7 @@ D:/Documents/SPlisHSPlasH/extern/install/PositionBasedDynamics/include/Visualiza
 D:/Documents/SPlisHSPlasH/extern/install/PositionBasedDynamics/include/Visualization/Selection.h
 D:/Documents/SPlisHSPlasH/extern/install/PositionBasedDynamics/include/Visualization/Shader.h
 D:/Documents/SPlisHSPlasH/extern/install/PositionBasedDynamics/include/Visualization/Visualization.h
-D:/Documents/SPlisHSPlasH/extern/install/PositionBasedDynamics/lib/PositionBasedDynamics.lib
+D:/Documents/SPlisHSPlasH/extern/install/PositionBasedDynamics/lib/PositionBasedDynamics_d.lib
 D:/Documents/SPlisHSPlasH/extern/install/PositionBasedDynamics/include/PositionBasedDynamics/./DirectPositionBasedSolverForStiffRodsInterface.h
 D:/Documents/SPlisHSPlasH/extern/install/PositionBasedDynamics/include/PositionBasedDynamics/./MathFunctions.h
 D:/Documents/SPlisHSPlasH/extern/install/PositionBasedDynamics/include/PositionBasedDynamics/./PositionBasedDynamics.h
@@ -23,7 +23,7 @@ D:/Documents/SPlisHSPlasH/extern/install/PositionBasedDynamics/include/PositionB
 D:/Documents/SPlisHSPlasH/extern/install/PositionBasedDynamics/include/PositionBasedDynamics/./PositionBasedRigidBodyDynamics.h
 D:/Documents/SPlisHSPlasH/extern/install/PositionBasedDynamics/include/PositionBasedDynamics/./SPHKernels.h
 D:/Documents/SPlisHSPlasH/extern/install/PositionBasedDynamics/include/PositionBasedDynamics/./TimeIntegration.h
-D:/Documents/SPlisHSPlasH/extern/install/PositionBasedDynamics/lib/Simulation.lib
+D:/Documents/SPlisHSPlasH/extern/install/PositionBasedDynamics/lib/Simulation_d.lib
 D:/Documents/SPlisHSPlasH/extern/install/PositionBasedDynamics/include/Simulation/./AABB.h
 D:/Documents/SPlisHSPlasH/extern/install/PositionBasedDynamics/include/Simulation/./BoundingSphere.h
 D:/Documents/SPlisHSPlasH/extern/install/PositionBasedDynamics/include/Simulation/./BoundingSphereHierarchy.h
@@ -46,7 +46,7 @@ D:/Documents/SPlisHSPlasH/extern/install/PositionBasedDynamics/include/Simulatio
 D:/Documents/SPlisHSPlasH/extern/install/PositionBasedDynamics/include/Simulation/./TimeStep.h
 D:/Documents/SPlisHSPlasH/extern/install/PositionBasedDynamics/include/Simulation/./TimeStepController.h
 D:/Documents/SPlisHSPlasH/extern/install/PositionBasedDynamics/include/Simulation/./TriangleModel.h
-D:/Documents/SPlisHSPlasH/extern/install/PositionBasedDynamics/lib/Utils.lib
+D:/Documents/SPlisHSPlasH/extern/install/PositionBasedDynamics/lib/Utils_d.lib
 D:/Documents/SPlisHSPlasH/extern/install/PositionBasedDynamics/include/Utils/./FileSystem.h
 D:/Documents/SPlisHSPlasH/extern/install/PositionBasedDynamics/include/Utils/./Hashmap.h
 D:/Documents/SPlisHSPlasH/extern/install/PositionBasedDynamics/include/Utils/./IndexedFaceMesh.h

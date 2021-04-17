@@ -1,4 +1,4 @@
-D:/Documents/SPlisHSPlasH/extern/install/Discregrid/lib/Discregrid.lib
+D:/Documents/SPlisHSPlasH/extern/install/Discregrid/lib/Discregrid_d.lib
 D:/Documents/SPlisHSPlasH/extern/install/Discregrid/./include/Discregrid/acceleration/bounding_sphere.hpp
 D:/Documents/SPlisHSPlasH/extern/install/Discregrid/./include/Discregrid/acceleration/bounding_sphere_hierarchy.hpp
 D:/Documents/SPlisHSPlasH/extern/install/Discregrid/./include/Discregrid/acceleration/kd_tree.hpp
