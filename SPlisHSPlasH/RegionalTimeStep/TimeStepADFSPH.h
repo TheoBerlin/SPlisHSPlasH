@@ -30,6 +30,7 @@ namespace SPH
 			Has a value within the interval [0, TIMESTEP_MULTIPLIER^(LEVEL_COUNT - 1)). */
 		unsigned int m_stepNr;
 		unsigned int m_lastCalculatedLevel;
+		unsigned int m_highestLevelToStep; // The highest region level that is or has been stepped in the current step
 
 		std::vector<FluidModelCopy*> m_fluidModelCopies;
 		std::vector<FluidModel*> m_originalFluidModel;

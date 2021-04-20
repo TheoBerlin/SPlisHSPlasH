@@ -321,9 +321,6 @@ namespace SPH
 		Real getParticleRadius() const { return m_particleRadius; }
 		Real getSupportRadius() const { return m_supportRadius; }
 
-		// If ADFSPH is used, the rendering of regional colors can be toggled
-		void toggleRegionColors(bool enabled);
-
 		/** Update time step size depending on the chosen method.
 		*/
 		void updateTimeStepSize();

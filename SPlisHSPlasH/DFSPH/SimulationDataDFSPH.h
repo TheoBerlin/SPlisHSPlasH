@@ -46,6 +46,12 @@ namespace SPH
 
 			void copyData(const SimulationDataDFSPH* other, unsigned int modelIdx, const unsigned int* particleIndices, unsigned int particleCount);
 
+			// Copies data, and swaps data with other data storage if a particle is part of a border
+			void copyData(SimulationDataDFSPH* other, unsigned int modelIdx, const unsigned int* particleIndices, const unsigned int* isBorder, unsigned int particleCount);
+
+			// Swaps data with other data storage if a particle is part of a border
+			void swapData(SimulationDataDFSPH* other, unsigned int modelIdx, const unsigned int* particleIndices, const unsigned int* isBorder, unsigned int particleCount);
+
 			/** Important: First call m_model->performNeighborhoodSearchSort()
 			 * to call the z_sort of the neighborhood search.
 			 */

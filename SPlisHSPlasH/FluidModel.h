@@ -180,6 +180,12 @@ namespace SPH
 			void copyParticleData(const FluidModel* fluidModel);
 			void copyParticleData(const FluidModel* fluidModel, const unsigned int* particleIndices, unsigned int numParticles);
 
+			// Copies data, and swaps data with other fluid model if a particle is part of a border
+			void copyParticleData(FluidModel* fluidModel, const unsigned int* particleIndices, const unsigned int* isBorder, unsigned int numParticles);
+
+			// Swap data with other fluid model if a particle is part of a border
+			void swapParticleData(FluidModel* fluidModel, const unsigned int* particleIndices, const unsigned int* isBorder, unsigned int numParticles);
+
 		#ifdef USE_PERFORMANCE_OPTIMIZATION
 			void copyPrecomputedParticleData(const FluidModel* fluidModel);
 		#endif

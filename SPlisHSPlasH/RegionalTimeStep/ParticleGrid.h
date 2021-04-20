@@ -36,8 +36,6 @@ namespace SPH
             */
             void determineRegions();
 
-            void toggleRegionColors(bool enabled);
-
             /*  Finds the border particles between level and level + 1. Updates the particle counts and particle
                 indices to contain these border particles. */
             void calculateLevelBorder(unsigned int level);
@@ -49,7 +47,7 @@ namespace SPH
 
             /*  Defines particle indices for a specific level. startingIndices contains the positions at which the
                 level's indices begin in each fluid model. */
-            void defineLevelParticleIndices(const unsigned int* startingIndices, unsigned int level);
+            void defineLevelParticleIndices(unsigned int level);
 
             FORCE_INLINE const std::vector<unsigned int> *getLevelParticleIndices() const           { return m_particleIndices.data(); }
             FORCE_INLINE const unsigned int *getLevelParticleCounts(unsigned int level) const       { return m_levelParticleCounts[level].data(); }
@@ -59,6 +57,7 @@ namespace SPH
             FORCE_INLINE unsigned int getParticleLevel(unsigned int modelIdx, unsigned int particleIdx) const { return m_particleLevels[modelIdx][particleIdx]; }
 
             FORCE_INLINE bool isBorder(unsigned int fluidModelIndex, unsigned int i) const { return m_isBorder[fluidModelIndex][i] == 1; }
+            FORCE_INLINE const unsigned int* getBorderArray(unsigned int modelIdx) const { return m_isBorder[modelIdx].data(); }
 
         private:
             void initGridSizeAndResolution();
@@ -117,8 +116,7 @@ namespace SPH
                 is not in a border, UINT32_MAX will be stored instead. */
             std::vector<std::vector<unsigned int>> m_regionBorderLevels;
 
-            /*  One element per particle. 1 signifies that a particle is in a regional border. Used if regional color
-                rendering is enabled. */
+            // One element per particle. 1 signifies that a particle is in a regional border
             std::vector<std::vector<unsigned int>> m_isBorder;
 
             std::array<std::vector<unsigned int>, REGION_LEVELS_COUNT - 1> m_levelBorderParticleCounts;

@@ -378,20 +378,6 @@ void Simulation::setKernel(int val)
 		updateBoundaryVolume();
 }
 
-void Simulation::toggleRegionColors(bool enabled)
-{
-	if (m_simulationMethod == SimulationMethods::DFSPH)
-	{
-		TimeStepDFSPH* DFSPH = reinterpret_cast<TimeStepDFSPH*>(m_timeStep);
-		DFSPH->getParticleGrid().toggleRegionColors(enabled);
-	}
-	else
-	{
-		TimeStepADFSPH* ADFSPH = reinterpret_cast<TimeStepADFSPH*>(m_timeStep);
-		ADFSPH->getParticleGrid().toggleRegionColors(enabled);
-	}
-}
-
 void Simulation::updateTimeStepSize()
 {
 	if (m_cflMethod == 1)

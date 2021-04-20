@@ -358,40 +358,140 @@ void SPH::FluidModel::copyParticleData(const FluidModel* fluidModel)
 #endif
 
     m_V = fluidModel->m_V;
-
-    m_density0 = fluidModel->m_density0;
-    m_pointSetIndex = fluidModel->m_pointSetIndex;
-    m_numActiveParticles = fluidModel->m_numActiveParticles;
-    m_numActiveParticles0 = fluidModel->m_numActiveParticles0;
 }
 
 void SPH::FluidModel::copyParticleData(const FluidModel* fluidModel, const unsigned int* particleIndices, unsigned int numParticles)
 {
     for (unsigned int particleNr = 0; particleNr < numParticles; particleNr++)
     {
-        const unsigned int particleIdx = particleIndices[particleNr];
+        const unsigned int i = particleIndices[particleNr];
 
-        m_masses[particleIdx] = fluidModel->m_masses[particleIdx];
-        m_a[particleIdx] = fluidModel->m_a[particleIdx];
-        m_v0[particleIdx] = fluidModel->m_v0[particleIdx];
-        m_x0[particleIdx] = fluidModel->m_x0[particleIdx];
-        m_x[particleIdx] = fluidModel->m_x[particleIdx];
-        m_v[particleIdx] = fluidModel->m_v[particleIdx];
-        m_density[particleIdx] = fluidModel->m_density[particleIdx];
-        m_particleId[particleIdx] = fluidModel->m_particleId[particleIdx];
-        m_particleState[particleIdx] = fluidModel->m_particleState[particleIdx];
+        m_masses[i] = fluidModel->m_masses[i];
+        m_a[i] = fluidModel->m_a[i];
+        m_v0[i] = fluidModel->m_v0[i];
+        m_x0[i] = fluidModel->m_x0[i];
+        m_x[i] = fluidModel->m_x[i];
+        m_v[i] = fluidModel->m_v[i];
+        m_density[i] = fluidModel->m_density[i];
+        m_particleId[i] = fluidModel->m_particleId[i];
+        m_particleState[i] = fluidModel->m_particleState[i];
     }
 
     m_V = fluidModel->m_V;
 
-    m_density0 = fluidModel->m_density0;
-    m_pointSetIndex = fluidModel->m_pointSetIndex;
-    m_numActiveParticles = fluidModel->m_numActiveParticles;
-    m_numActiveParticles0 = fluidModel->m_numActiveParticles0;
-
 #ifdef USE_PERFORMANCE_OPTIMIZATION
 	copyPrecomputedParticleData(fluidModel);
 #endif
+}
+
+void SPH::FluidModel::copyParticleData(FluidModel* fluidModel, const unsigned int* particleIndices, const unsigned int* isBorder, unsigned int numParticles)
+{
+    for (unsigned int particleNr = 0; particleNr < numParticles; particleNr++)
+    {
+        const unsigned int i = particleIndices[particleNr];
+
+		if (!isBorder[i])
+		{
+			m_masses[i] = fluidModel->m_masses[i];
+			m_a[i] = fluidModel->m_a[i];
+			m_v0[i] = fluidModel->m_v0[i];
+			m_x0[i] = fluidModel->m_x0[i];
+			m_x[i] = fluidModel->m_x[i];
+			m_v[i] = fluidModel->m_v[i];
+			m_density[i] = fluidModel->m_density[i];
+			m_particleId[i] = fluidModel->m_particleId[i];
+			m_particleState[i] = fluidModel->m_particleState[i];
+		}
+		else
+		{
+			Real tempReal = m_masses[i];
+			m_masses[i] = fluidModel->m_masses[i];
+			fluidModel->m_masses[i] = tempReal;
+
+			Vector3r tempVec3 = m_a[i];
+			m_a[i] = fluidModel->m_a[i];
+			fluidModel->m_a[i] = tempVec3;
+
+			tempVec3 = m_v0[i];
+			m_v0[i] = fluidModel->m_v0[i];
+			fluidModel->m_v0[i] = tempVec3;
+
+			tempVec3 = m_x0[i];
+			m_x0[i] = fluidModel->m_x0[i];
+			fluidModel->m_x0[i] = tempVec3;
+
+			tempVec3 = m_x[i];
+			m_x[i] = fluidModel->m_x[i];
+			fluidModel->m_x[i] = tempVec3;
+
+			tempVec3 = m_v[i];
+			m_v[i] = fluidModel->m_v[i];
+			fluidModel->m_v[i] = tempVec3;
+
+			tempReal = m_density[i];
+			m_density[i] = fluidModel->m_density[i];
+			fluidModel->m_density[i] = tempReal;
+
+			tempReal = m_particleId[i];
+			m_particleId[i] = fluidModel->m_particleId[i];
+			fluidModel->m_particleId[i] = tempReal;
+
+			const ParticleState tempState = m_particleState[i];
+			m_particleState[i] = fluidModel->m_particleState[i];
+			fluidModel->m_particleState[i] = tempState;
+		}
+    }
+
+	const Real temp = m_V;
+    m_V = fluidModel->m_V;
+	fluidModel->m_V = temp;
+}
+
+void SPH::FluidModel::swapParticleData(FluidModel* fluidModel, const unsigned int* particleIndices, const unsigned int* isBorder, unsigned int numParticles)
+{
+    for (unsigned int particleNr = 0; particleNr < numParticles; particleNr++)
+    {
+        const unsigned int i = particleIndices[particleNr];
+
+		if (isBorder[i])
+		{
+			Real tempReal = m_masses[i];
+			m_masses[i] = fluidModel->m_masses[i];
+			fluidModel->m_masses[i] = tempReal;
+
+			Vector3r tempVec3 = m_a[i];
+			m_a[i] = fluidModel->m_a[i];
+			fluidModel->m_a[i] = tempVec3;
+
+			tempVec3 = m_v0[i];
+			m_v0[i] = fluidModel->m_v0[i];
+			fluidModel->m_v0[i] = tempVec3;
+
+			tempVec3 = m_x0[i];
+			m_x0[i] = fluidModel->m_x0[i];
+			fluidModel->m_x0[i] = tempVec3;
+
+			tempVec3 = m_x[i];
+			m_x[i] = fluidModel->m_x[i];
+			fluidModel->m_x[i] = tempVec3;
+
+			tempVec3 = m_v[i];
+			m_v[i] = fluidModel->m_v[i];
+			fluidModel->m_v[i] = tempVec3;
+
+			tempReal = m_density[i];
+			m_density[i] = fluidModel->m_density[i];
+			fluidModel->m_density[i] = tempReal;
+
+			tempReal = m_particleId[i];
+			m_particleId[i] = fluidModel->m_particleId[i];
+			fluidModel->m_particleId[i] = tempReal;
+
+			const ParticleState tempState = m_particleState[i];
+			m_particleState[i] = fluidModel->m_particleState[i];
+			fluidModel->m_particleState[i] = tempState;
+		}
+    }
 }
 
 #ifdef USE_PERFORMANCE_OPTIMIZATION

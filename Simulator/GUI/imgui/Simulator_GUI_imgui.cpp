@@ -134,10 +134,7 @@ void Simulator_GUI_imgui::initImguiParameters()
 	regionColorsParam->label = "Render region colors";
 	regionColorsParam->readOnly = false;
 	regionColorsParam->getFct = [this]() -> bool { return m_renderRegionColors; };
-	regionColorsParam->setFct = [this](bool v) {
-		m_renderRegionColors = v;
-		Simulation::getCurrent()->toggleRegionColors(v);
-	};
+	regionColorsParam->setFct = [this](bool v) { m_renderRegionColors = v; };
 	imguiParameters::addParam("Visualization", "", regionColorsParam);
 }
 
