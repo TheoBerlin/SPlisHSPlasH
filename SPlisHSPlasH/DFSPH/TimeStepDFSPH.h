@@ -56,6 +56,7 @@ namespace SPH
 
 		virtual void initParameters();
 
+		void checkVelocities();
 		void debugParticle(unsigned int fluidModelIndex, unsigned int i);
 
 	public:

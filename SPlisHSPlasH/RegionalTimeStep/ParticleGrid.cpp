@@ -182,43 +182,46 @@ void ParticleGrid::defineLevelParticleIndices()
     }
 }
 
-void ParticleGrid::defineLevelParticleIndices(unsigned int level)
+void ParticleGrid::defineLevelParticleIndices(unsigned int highestLevel)
 {
     Simulation *simulation = Simulation::getCurrent();
     const unsigned int numFluidModels = simulation->numberOfFluidModels();
 
-    for (unsigned int modelIdx = 0; modelIdx < numFluidModels; modelIdx++)
+    for (unsigned int level = 1; level <= highestLevel; level++)
     {
-        // #pragma omp parallel num_threads(2) default(shared)
-        const std::vector<unsigned int> &particleLevels = m_particleLevels[modelIdx];
-        const unsigned int startingIndex = level > 0 ? m_levelUnionsParticleCounts[level - 1][modelIdx] : 0;
-        if (startingIndex >= m_particleIndices[modelIdx].size())
+        for (unsigned int modelIdx = 0; modelIdx < numFluidModels; modelIdx++)
         {
-            continue;
-        }
-
-        unsigned int* levelParticleIndices = &m_particleIndices[modelIdx][startingIndex];
-
-        unsigned int levelIndicesPos = 0;
-
-        // const int threadID = omp_get_thread_num();
-        // if (threadID == 0)
-        std::vector<unsigned int> &levelUnionsParticleCounts = m_levelUnionsParticleCounts[level];
-
-        const unsigned int indicesPosBegin = levelIndicesPos;
-
-        const unsigned int particleCount = particleLevels.size();
-        for (unsigned int particleIdx = 0; particleIdx < particleCount; particleIdx++)
-        {
-            if (particleLevels[particleIdx] == level)
+            // #pragma omp parallel num_threads(2) default(shared)
+            const std::vector<unsigned int> &particleLevels = m_particleLevels[modelIdx];
+            const unsigned int startingIndex = level > 0 ? m_levelUnionsParticleCounts[level - 1][modelIdx] : 0;
+            if (startingIndex >= m_particleIndices[modelIdx].size())
             {
-                levelParticleIndices[levelIndicesPos++] = particleIdx;
+                continue;
             }
-        }
 
-        m_levelParticleCounts[level][modelIdx] = levelIndicesPos - indicesPosBegin;
-        m_levelUnionsParticleCounts[level][modelIdx] = m_levelParticleCounts[level][modelIdx] +
-            (level > 0 ? m_levelUnionsParticleCounts[level - 1][modelIdx] : 0);
+            unsigned int* levelParticleIndices = &m_particleIndices[modelIdx][startingIndex];
+
+            unsigned int levelIndicesPos = 0;
+
+            // const int threadID = omp_get_thread_num();
+            // if (threadID == 0)
+            std::vector<unsigned int> &levelUnionsParticleCounts = m_levelUnionsParticleCounts[level];
+
+            const unsigned int indicesPosBegin = levelIndicesPos;
+
+            const unsigned int particleCount = particleLevels.size();
+            for (unsigned int particleIdx = 0; particleIdx < particleCount; particleIdx++)
+            {
+                if (particleLevels[particleIdx] == level)
+                {
+                    levelParticleIndices[levelIndicesPos++] = particleIdx;
+                }
+            }
+
+            m_levelParticleCounts[level][modelIdx] = levelIndicesPos - indicesPosBegin;
+            m_levelUnionsParticleCounts[level][modelIdx] = m_levelParticleCounts[level][modelIdx] +
+                (level > 0 ? m_levelUnionsParticleCounts[level - 1][modelIdx] : 0);
+        }
     }
 }
 
@@ -386,7 +389,7 @@ void ParticleGrid::defineCellLevels()
             const Real maxTimeStepSize = Simulation::getCurrent()->getMaxTimeStepSize();
 
             // Limit what regional levels are enabled this frame, to stay within the max time step size
-            const unsigned int maxRegionalLevel = std::min<unsigned int>(REGION_LEVELS_COUNT - 1, unsigned int(std::log2(maxTimeStepSize  / timeStepSize) / logN));
+            const unsigned int maxRegionalLevel = std::min<unsigned int>(REGION_LEVELS_COUNT - 1, unsigned int(std::logf(maxTimeStepSize  / timeStepSize) / logN));
 
             // Use each block's max velocity to determine its level
             #pragma omp for schedule(static)

@@ -3,9 +3,9 @@
 
 #include "FluidModelCopy.h"
 #include "ParticleGrid.h"
+#include "SimulationDataADFSPH.h"
 #include "SPlisHSPlasH/Common.h"
 #include "SPlisHSPlasH/TimeStep.h"
-#include "SPlisHSPlasH/DFSPH/SimulationDataDFSPH.h"
 #include "SPlisHSPlasH/SPHKernels.h"
 #include "SPlisHSPlasH/RegionalTimeStep/ParticleGrid.h"
 
@@ -17,8 +17,8 @@ namespace SPH
 	class TimeStepADFSPH : public TimeStep
 	{
 	protected:
-		SimulationDataDFSPH m_simulationData;
-		SimulationDataDFSPH m_simulationDataCopy;
+		SimulationDataADFSPH m_simulationData;
+		SimulationDataADFSPH m_simulationDataCopy;
 		ParticleGrid m_particleGrid;
 		unsigned int m_counter;
 		const Real m_eps = static_cast<Real>(1.0e-5);
@@ -26,9 +26,9 @@ namespace SPH
 		unsigned int m_iterationsV;
 		Real m_maxErrorV;
 		unsigned int m_maxIterationsV;
-		/*	m_stepNr helps keep track of which regional levels need to be calculated in the current step.
+		/*	m_subStepNr helps keep track of which regional levels need to be calculated in the current step.
 			Has a value within the interval [0, TIMESTEP_MULTIPLIER^(LEVEL_COUNT - 1)). */
-		unsigned int m_stepNr;
+		unsigned int m_subStepNr;
 		unsigned int m_lastCalculatedLevel;
 		unsigned int m_highestLevelToStep; // The highest region level that is or has been stepped in the current step
 
@@ -56,6 +56,7 @@ namespace SPH
 		void performNeighborhoodSearch();
 		void calculateLevel(unsigned int level, Real dt);
 		void interpolateBorderParticles(unsigned int level);
+		void correctAccelerations(unsigned int level);
 
 		void setActiveParticles(unsigned int level);
 

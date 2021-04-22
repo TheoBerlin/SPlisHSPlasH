@@ -45,9 +45,8 @@ namespace SPH
 
             void defineLevelParticleIndices();
 
-            /*  Defines particle indices for a specific level. startingIndices contains the positions at which the
-                level's indices begin in each fluid model. */
-            void defineLevelParticleIndices(unsigned int level);
+            // Defines particle indices for a level and its sublevels
+            void defineLevelParticleIndices(unsigned int highestLevel);
 
             FORCE_INLINE const std::vector<unsigned int> *getLevelParticleIndices() const           { return m_particleIndices.data(); }
             FORCE_INLINE const unsigned int *getLevelParticleCounts(unsigned int level) const       { return m_levelParticleCounts[level].data(); }

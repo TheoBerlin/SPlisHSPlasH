@@ -1795,3 +1795,48 @@ void TimeStepDFSPH::debugParticle(unsigned int fluidModelIndex, unsigned int i)
 
 	int a = 0;
 }
+
+void TimeStepDFSPH::checkVelocities()
+{
+	Simulation *sim = Simulation::getCurrent();
+	TimeManager *tm = TimeManager::getCurrent();
+
+	const Real dt = tm->getTimeStepSize();
+	const Vector3f particleBounds = m_particleGrid.getGridSize();
+
+ 	const unsigned int nFluids = sim->numberOfFluidModels();
+
+	for (unsigned int modelIdx = 0; modelIdx < nFluids; modelIdx++)
+	{
+		#pragma omp parallel default(shared)
+ 		{
+			FluidModel *model = sim->getFluidModel(modelIdx);
+			const unsigned int* particleIndices = model->getParticleIndices();
+			const unsigned int nParticles = model->numActiveParticles();
+
+			#pragma omp for schedule(static)
+			for (int i = 0; i < nParticles; i++)
+			{
+				if (model->getParticleState(i) == ParticleState::Active)
+				{
+					const Vector3r& position = model->getPosition(i);
+					const Vector3r& velocity = model->getVelocity(i);
+
+					const Vector3f newPos = (position + velocity * dt).cwiseAbs();
+					if (newPos.x() > particleBounds.x() || newPos.y() > particleBounds.y() || newPos.z() > particleBounds.z())
+					{
+						debugParticle(modelIdx, i);
+					}
+					if (velocity.norm() > 100.0f)
+					{
+						debugParticle(modelIdx, i);
+					}
+					if (position.x() != position.x() || velocity.x() != velocity.x()) // nan check
+						int a = 0;
+					if (std::abs(m_simulationData.getKappa(modelIdx, i)) > 10000.0f)
+						debugParticle(modelIdx, i);
+				}
+			}
+		}
+	}
+}

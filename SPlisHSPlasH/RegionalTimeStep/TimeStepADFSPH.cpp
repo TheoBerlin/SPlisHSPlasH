@@ -36,7 +36,7 @@ TimeStepADFSPH::TimeStepADFSPH() :
 	m_enableDivergenceSolver = true;
 	m_maxIterationsV = 100;
 	m_maxErrorV = static_cast<Real>(0.1);
-	m_stepNr = 0;
+	m_subStepNr = 0;
 	m_lastCalculatedLevel = UINT32_MAX;
 	m_highestLevelToStep = UINT32_MAX;
 
@@ -108,7 +108,7 @@ void TimeStepADFSPH::step()
 	m_highestLevelToStep = 0;
 	for (unsigned int level = REGION_LEVELS_COUNT - 1; level > 0; level--)
 	{
-		if ((m_stepNr % (unsigned int)std::pow(LEVEL_TIMESTEP_MULTIPLIER, level)) == 0)
+		if ((m_subStepNr % (unsigned int)std::pow(LEVEL_TIMESTEP_MULTIPLIER, level)) == 0)
 		{
 			// TODO: Ignore levels that are empty of particles. Add boolean such as 'shouldDetermineRegion'
 			m_highestLevelToStep = level;
@@ -154,8 +154,7 @@ void TimeStepADFSPH::step()
 
 		#pragma omp parallel default(shared)
 		{
-			const int numParticles = (int)fm->getNumActiveParticles0();
-			const unsigned int* particleIndices = fm->getParticleIndices();
+			const int numParticles = (int)fm->numberOfParticles();
 
 			#pragma omp for schedule(static)
 			for (int i = 0; i < numParticles; i++)
@@ -174,10 +173,13 @@ void TimeStepADFSPH::step()
 	sim->animateParticles();
 
 	// Compute new time
-	tm->setTime(tm->getTime() + tm->getTimeStepSize());
-	m_stepNr += 1;
-}
+	tm->setTime(tm->getTime() + timeStepSize);
 
+	m_subStepNr += 1;
+	constexpr const unsigned int subStepCount = MathFunctions::power(LEVEL_TIMESTEP_MULTIPLIER, REGION_LEVELS_COUNT - 1);
+	if (m_subStepNr == subStepCount)
+		m_subStepNr = 0;
+}
 
 void TimeStepADFSPH::pressureSolve()
 {
@@ -191,6 +193,8 @@ void TimeStepADFSPH::pressureSolve()
 	for (unsigned int fluidModelIndex = 0; fluidModelIndex < nFluids; fluidModelIndex++)
 		warmstartPressureSolve(fluidModelIndex);
 #endif
+
+	checkVelocities();
 
 	//////////////////////////////////////////////////////////////////////////
 	// Compute rho_adv
@@ -406,12 +410,16 @@ void TimeStepADFSPH::checkVelocities()
 					{
 						debugParticle(modelIdx, i);
 					}
-					if (velocity.norm() > 10.0f)
+					if (velocity.norm() > 100.0f)
 					{
 						debugParticle(modelIdx, i);
 					}
-					if (position.x() != position.x() || velocity.x() != velocity.x()) // nan check
+					if (position.x() != position.x() || velocity.x() != velocity.x()) // NaN check
 						int a = 0;
+					if (std::abs(m_simulationData.getKappa(modelIdx, i)) > 10000.0f)
+						debugParticle(modelIdx, i);
+					if (m_particleGrid.isBorder(modelIdx, i) && m_particleGrid.getParticleLevel(modelIdx, i) == 0)
+						debugParticle(modelIdx, i);
 				}
 			}
 		}
@@ -437,6 +445,7 @@ void TimeStepADFSPH::debugParticle(unsigned int fluidModelIndex, unsigned int i)
 		unsigned int NeighborLevel;
 		bool IsBorder;
 		Real Kappa;
+		Real Factor;
 	};
 
 	std::vector<Neighbor> neighbors;
@@ -452,7 +461,8 @@ void TimeStepADFSPH::debugParticle(unsigned int fluidModelIndex, unsigned int i)
 			Neighbor({
 				m_particleGrid.getParticleLevel(pid, neighborIndex),
 				m_particleGrid.isBorder(fluidModelIndex, i),
-				m_simulationData.getKappa(pid, neighborIndex)
+				m_simulationData.getKappa(pid, neighborIndex),
+				m_simulationData.getFactor(pid, neighborIndex)
 			})
 		);
 	)
@@ -473,11 +483,11 @@ void TimeStepADFSPH::debugParticle(unsigned int fluidModelIndex, unsigned int i)
 		const Real jDens = model->getDensity(j);
 		const Real jDensAdv = m_simulationData.getDensityAdv(fluidModelIndex, j);
 
-		if (jParticleLevel != m_lastCalculatedLevel && !jIsBorder)
+		if (jParticleLevel > m_lastCalculatedLevel && !jIsBorder)
 			int a = 0;
 	}
 
-	if (particleLevel != m_lastCalculatedLevel && !isBorderParticle)
+	if (particleLevel > m_lastCalculatedLevel && !isBorderParticle)
 		int a = 0;
 
 	int a = 0;
@@ -1882,15 +1892,15 @@ void TimeStepADFSPH::calculateLevel(unsigned int level, Real dt)
 	TimeManager *tm = TimeManager::getCurrent();
 	const unsigned int nModels = sim->numberOfFluidModels();
 
+	// Indices don't need correction for the highest level, because determineRegions() is called before calculating it
 	if (level < REGION_LEVELS_COUNT - 1)
 	{
 		if (m_lastCalculatedLevel < level)
 		{
 			/*	In the previous timestep, a lower level was calculated, thus this level's indices have been
 				overwritten by the lower level's border particle indices. Redefine the particle indices for this
-				level. */
-			const unsigned int* firstParticleNumbers = m_particleGrid.getLevelUnionParticleCounts(level - 1);
-			m_particleGrid.defineLevelParticleIndices(level); // TODO: Potential problem. Won't fix indices for sublevels
+				level and its sublevels. */
+			m_particleGrid.defineLevelParticleIndices(level);
 		}
 
 		if (m_lastCalculatedLevel != level)
@@ -2029,8 +2039,8 @@ void TimeStepADFSPH::calculateLevel(unsigned int level, Real dt)
 			const unsigned int* isBorder = m_particleGrid.getBorderArray(modelIdx);
 
 			// Swap data between the active model and the copy for this level's border particles
-			activeModel->swapParticleData(modelCopy, &particleIndices[startingIndex], &isBorder[startingIndex], numParticlesToCopy);
-			m_simulationData.swapData(&m_simulationDataCopy, modelIdx, &particleIndices[startingIndex], &isBorder[startingIndex], numParticlesToCopy);
+			activeModel->swapParticleData(modelCopy, &particleIndices[startingIndex], isBorder, numParticlesToCopy);
+			m_simulationData.swapData(&m_simulationDataCopy, modelIdx, &particleIndices[startingIndex], isBorder, numParticlesToCopy);
 
 			// Revert sublevels
 			numParticlesToCopy = lowerLevelUnionParticleCounts[modelIdx];
@@ -2091,6 +2101,40 @@ void TimeStepADFSPH::interpolateBorderParticles(unsigned int level)
 			}
 		}
 	}
+}
+
+void TimeStepADFSPH::correctAccelerations(unsigned int level)
+{
+	Simulation* sim = Simulation::getCurrent();
+	const unsigned int nModels = sim->numberOfFluidModels();
+
+	// Calculate the acceleration correction
+	for (unsigned int modelIdx = 0; modelIdx < nModels; modelIdx++)
+	{
+		#pragma omp parallel default(shared)
+		{
+			FluidModel* model = sim->getFluidModel(modelIdx);
+			const unsigned int* particleIndices = model->getParticleIndices();
+			const int numParticles = model->numActiveParticles();
+
+			// Reset this substep's stored acceleration if this is the highest level for this substep
+			const Real interpFactor1 = m_subStepNr != 0;
+
+			#pragma omp for schedule(static)
+			for (int particleNr = 0; particleNr < numParticles; particleNr++)
+			{
+				const unsigned int i = particleIndices[particleNr];
+				const unsigned int particleLevel = m_particleGrid.getParticleLevel(modelIdx, i);
+
+				const Real interpFactor2 = 1.0f / (m_highestLevelToStep + 1 - particleLevel);
+
+				VectorAcc& accCorrection = m_simulationData.getCorrectedA(modelIdx, i);
+				accCorrection[m_subStepNr] = accCorrection[m_subStepNr] * interpFactor1 + interpFactor2 * model->getAcceleration(i);
+			}
+		}
+	}
+
+	// Apply the acceleration correction
 }
 
 void TimeStepADFSPH::setActiveParticles(unsigned int level)

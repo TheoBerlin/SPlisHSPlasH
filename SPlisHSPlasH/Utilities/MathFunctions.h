@@ -11,7 +11,7 @@ namespace SPH
 	public:
 		/** Implementation of the paper: \n
 		 * Matthias Müller, Jan Bender, Nuttapong Chentanez and Miles Macklin,
-		 * "A Robust Method to Extract the Rotational Part of Deformations", 
+		 * "A Robust Method to Extract the Rotational Part of Deformations",
 		 * ACM SIGGRAPH Motion in Games, 2016
 		 */
 		static void extractRotation(const Matrix3r &A, Quaternionr &q, const unsigned int maxIter);
@@ -24,6 +24,16 @@ namespace SPH
 		/** Returns two orthogonal vectors to vec which are also orthogonal to each other.
 		*/
 		static void getOrthogonalVectors(const Vector3r &vec, Vector3r &x, Vector3r &y);
+
+		template<typename T>
+		static constexpr T sqr(T a) {
+			return a * a;
+		}
+
+		template<typename T>
+		static constexpr T power(T a, std::size_t n) {
+			return n == 0 ? 1 : sqr(power(a, n / 2)) * (n % 2 == 0 ?  1 : a);
+		}
 	};
 }
 
