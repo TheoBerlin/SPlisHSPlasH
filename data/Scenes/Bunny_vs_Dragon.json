@@ -72,7 +72,7 @@
 	"FluidModels": [
 		{
 			"particleFile": "../models/bunny.bgeo",
-			"translation": [-2.0, 0.1, 0.0],
+			"translation": [-2.0, 1.1, 0.0],
 			"rotationAxis": [0, 1, 0],
 			"rotationAngle": 3.14159265359,
 			"scale": [1, 1, 1]
