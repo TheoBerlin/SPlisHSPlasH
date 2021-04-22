@@ -1893,12 +1893,6 @@ void TimeStepADFSPH::calculateLevel(unsigned int level, Real dt)
 
 #ifdef USE_PERFORMANCE_OPTIMIZATION
 	precomputeValues();
-
-	for (unsigned int fluidModelIndex = 0; fluidModelIndex < nModels; fluidModelIndex++)
-	{
-		FluidModel* model = sim->getFluidModel(fluidModelIndex);
-		m_fluidModelCopies[fluidModelIndex]->copyPrecomputedParticleData(model);
-	}
 #endif
 
 	checkVelocities();

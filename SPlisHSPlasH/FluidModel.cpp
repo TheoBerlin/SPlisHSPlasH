@@ -497,9 +497,9 @@ void SPH::FluidModel::swapParticleData(FluidModel* fluidModel, const unsigned in
 #ifdef USE_PERFORMANCE_OPTIMIZATION
 void SPH::FluidModel::copyPrecomputedParticleData(const FluidModel* fluidModel)
 {
-        m_precomp_V_gradW = fluidModel->m_precomp_V_gradW;
-        m_precompIndices = fluidModel->m_precompIndices;
-        m_precompIndicesSamePhase = fluidModel->m_precompIndicesSamePhase;
+	m_precomp_V_gradW = fluidModel->m_precomp_V_gradW;
+	m_precompIndices = fluidModel->m_precompIndices;
+	m_precompIndicesSamePhase = fluidModel->m_precompIndicesSamePhase;
 }
 #endif
 
