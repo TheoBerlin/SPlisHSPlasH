@@ -523,8 +523,7 @@ void TimeStep::precomputeValues()
 		model->get_precomputed_indices().clear();
 		model->get_precomputed_indices_same_phase().clear();
 		model->get_precomputed_V_gradW().clear();
-		const int numParticles = (int)model->numActiveParticles();
-		const unsigned int* particleIndices = model->getParticleIndices();
+		const int numParticles = (int)model->getNumActiveParticles0();
 
 		auto& precomputed_indices = model->get_precomputed_indices();
 		auto& precomputed_indices_same_phase = model->get_precomputed_indices_same_phase();
@@ -537,9 +536,8 @@ void TimeStep::precomputeValues()
 		unsigned int sumNeighborParticles = 0;
 		unsigned int sumNeighborParticlesSamePhase = 0;
 
-		for (int particleNr = 0; particleNr < numParticles; particleNr++)
+		for (int i = 0; i < numParticles; i++)
 		{
-			const unsigned int i = particleIndices[particleNr];
 			for (unsigned int pid = 0; pid < nFluids; pid++)
 			{
 				const unsigned int maxN = sim->numberOfNeighbors(fluidModelIndex, pid, i);
@@ -562,15 +560,12 @@ void TimeStep::precomputeValues()
 
 		#pragma omp parallel default(shared)
 		{
-			const unsigned int* particleIndices = model->getParticleIndices();
-
 			#pragma omp for schedule(static)
-			for (int particleNr = 0; particleNr < numParticles; particleNr++)
+			for (int i = 0; i < numParticles; i++)
 			{
-				const unsigned int i = particleIndices[particleNr];
 				const Vector3r& xi = model->getPosition(i);
 				const Vector3f8 xi_avx(xi);
-				unsigned int base = precomputed_indices[particleNr];
+				unsigned int base = precomputed_indices[i];
 				unsigned int idx = 0;
 				forall_fluid_neighbors_avx(
 					const Scalarf8 Vj_avx = convert_zero(fm_neighbor->getVolume(0), count);

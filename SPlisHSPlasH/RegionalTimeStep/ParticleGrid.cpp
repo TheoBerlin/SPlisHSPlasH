@@ -417,7 +417,7 @@ void ParticleGrid::defineCellLevels()
             const Real maxTimeStepSize = Simulation::getCurrent()->getMaxTimeStepSize();
 
             // Limit what regional levels are enabled this frame, to stay within the max time step size
-            const unsigned int maxRegionalLevel = std::min<unsigned int>(REGION_LEVELS_COUNT - 1, unsigned int(std::log2(maxTimeStepSize  / timeStepSize) / logN));
+            const unsigned int maxRegionalLevel = std::min<unsigned int>(REGION_LEVELS_COUNT - 1, unsigned int(std::logf(maxTimeStepSize  / timeStepSize) / logN));
 
             // Use each block's max velocity to determine its level
             #pragma omp for schedule(static)

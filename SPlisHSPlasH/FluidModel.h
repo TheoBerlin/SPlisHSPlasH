@@ -24,15 +24,10 @@
 	#define compute_Vj_gradW() \
 		const Vector3f8& V_gradW = model->get_precomputed_V_gradW()[model->get_precomputed_indices()[i] + idx];
 
-	#define compute_Vj_gradW_adfsph() \
-		const Vector3f8& V_gradW = model->get_precomputed_V_gradW()[model->get_precomputed_indices()[particleNr] + idx];
-
 	// compute the value Vj * gradW
 	#define compute_Vj_gradW_samephase() \
 		const Vector3f8& V_gradW = model->get_precomputed_V_gradW()[model->get_precomputed_indices_same_phase()[i] + j / 8];
 
-	#define compute_Vj_gradW_samephase_adfsph() \
-		const Vector3f8& V_gradW = model->get_precomputed_V_gradW()[model->get_precomputed_indices_same_phase()[particleNr] + j / 8];
 #else
 	// compute the value xj
 	#define compute_xj(fm_neighbor, pid) \
@@ -46,14 +41,8 @@
 	#define compute_Vj_gradW() \
 		const Vector3f8 &V_gradW = CubicKernel_AVX::gradW(xi_avx - xj_avx) * Vj_avx;
 
-	#define compute_Vj_gradW_adfsph() \
-		const Vector3f8 &V_gradW = CubicKernel_AVX::gradW(xi_avx - xj_avx) * Vj_avx;
-
 	// compute the value Vj * gradW assuming that xj and Vj are already available
 	#define compute_Vj_gradW_samephase() \
-		const Vector3f8 &V_gradW = CubicKernel_AVX::gradW(xi_avx - xj_avx) * Vj_avx;
-
-	#define compute_Vj_gradW_samephasead_adfsph() \
 		const Vector3f8 &V_gradW = CubicKernel_AVX::gradW(xi_avx - xj_avx) * Vj_avx;
 #endif
 
