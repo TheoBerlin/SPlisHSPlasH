@@ -8,7 +8,8 @@ SimulationDataADFSPH::SimulationDataADFSPH() :
 	m_factor(),
 	m_kappa(),
 	m_kappaV(),
-	m_density_adv()
+	m_density_adv(),
+	m_correctedA()
 {
 }
 

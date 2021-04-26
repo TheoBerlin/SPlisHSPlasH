@@ -163,7 +163,7 @@ void Simulator_OpenGL::pointShaderEnd(Shader *shader, const bool useTexture)
 	shader->end();
 }
 
-void Simulator_OpenGL::pointRegionShaderBegin(Real particleRadius, const Vector3r* particlePositions, const unsigned int *particleLevels, const unsigned int *particleIsBorder)
+void Simulator_OpenGL::pointRegionShaderBegin(Real particleRadius, const Vector3r* particlePositions, const unsigned int *particleLevels, const unsigned int *particleBorderLevels)
 {
 	m_shader_regions.begin();
 
@@ -194,7 +194,7 @@ void Simulator_OpenGL::pointRegionShaderBegin(Real particleRadius, const Vector3
 	glVertexAttribIPointer(1, 1, GL_UNSIGNED_INT, 0, particleLevels);
 
 	glEnableVertexAttribArray(2);
-	glVertexAttribIPointer(2, 1, GL_UNSIGNED_INT, 0, particleIsBorder);
+	glVertexAttribIPointer(2, 1, GL_UNSIGNED_INT, 0, particleBorderLevels);
 }
 
 void Simulator_OpenGL::pointRegionShaderEnd()
@@ -233,13 +233,13 @@ void Simulator_OpenGL::renderFluid(FluidModel *model, float *fluidColor,
 		if (renderRegionColors)
 		{
 			const FieldDescription& levelField = model->getField("particle levels");
-			const FieldDescription& isBorderField = model->getField("is border");
+			const FieldDescription& particleBorderLevelsField = model->getField("particle border levels");
 
 			const unsigned int *particleLevels = (const unsigned int*)levelField.getFct(0);
-			const unsigned int *particleIsBorder = (const unsigned int*)isBorderField.getFct(0);
+			const unsigned int *particleBorderLevels = (const unsigned int*)particleBorderLevelsField.getFct(0);
 
 			// Render each particle with the color of its regional level
-			pointRegionShaderBegin(particleRadius, &model->getPosition(0), particleLevels, particleIsBorder);
+			pointRegionShaderBegin(particleRadius, &model->getPosition(0), particleLevels, particleBorderLevels);
 			glDrawArrays(GL_POINTS, 0, model->numActiveParticles());
 			pointRegionShaderEnd();
 		}

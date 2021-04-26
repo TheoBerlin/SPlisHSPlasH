@@ -17,8 +17,8 @@ ParticleGrid::~ParticleGrid()
         FluidModel *fluidModel = simulation->getFluidModel(modelIdx);
         fluidModel->removeFieldByName("particle levels");
 
-        if (!m_isBorder.empty())
-            fluidModel->removeFieldByName("is border");
+        if (!m_particleBorderLevels.empty())
+            fluidModel->removeFieldByName("particle border levels");
     }
 }
 
@@ -34,25 +34,25 @@ void ParticleGrid::init()
 
     const unsigned int nModels = simulation->numberOfFluidModels();
     m_cellParticlePairs.resize(nModels);
-    m_regionBorderLevels.resize(nModels);
+    m_cellBorderLevels.resize(nModels);
     m_particleIndices.resize(nModels);
     m_borderParticleIndices.resize(nModels);
     m_particleLevels.resize(nModels);
-    m_isBorder.resize(nModels);
+    m_particleBorderLevels.resize(nModels);
 
     for (unsigned int modelIndex = 0; modelIndex < nModels; modelIndex++)
     {
         FluidModel *fluidModel = simulation->getFluidModel(modelIndex);
         const unsigned int nParticles = fluidModel->numActiveParticles();
 		m_cellParticlePairs[modelIndex].resize(nParticles);
-        m_regionBorderLevels[modelIndex].resize(m_cells[modelIndex].size());
+        m_cellBorderLevels[modelIndex].resize(m_cells[modelIndex].size());
         m_particleIndices[modelIndex].resize(nParticles);
         m_borderParticleIndices[modelIndex].reserve(nParticles);
 
         m_particleLevels[modelIndex].resize(nParticles);
-        m_isBorder[modelIndex].resize(nParticles);
+        m_particleBorderLevels[modelIndex].resize(nParticles);
         fluidModel->addField({ "particle levels", FieldType::UInt, [this, modelIndex](unsigned int particleIdx) { return &m_particleLevels[modelIndex][particleIdx]; } });
-        fluidModel->addField({ "is border", FieldType::UInt, [this, modelIndex](unsigned int particleIdx) { return &m_isBorder[modelIndex][particleIdx]; } });
+        fluidModel->addField({ "particle border levels", FieldType::UInt, [this, modelIndex](unsigned int particleIdx) { return &m_particleBorderLevels[modelIndex][particleIdx]; } });
     }
 
     for (unsigned int level = 0; level < REGION_LEVELS_COUNT; level++)
@@ -98,7 +98,7 @@ void ParticleGrid::calculateLevelBorder(unsigned int level)
         {
             unsigned int* borderParticleIndices = &m_particleIndices[modelIdx][indexStartPos];
 
-            const std::vector<unsigned int>& borderLevels = m_regionBorderLevels[modelIdx];
+            const std::vector<unsigned int>& borderLevels = m_cellBorderLevels[modelIdx];
 
             for (unsigned int cellIdx = 0; cellIdx < cells.size(); cellIdx++)
             {
@@ -442,20 +442,20 @@ void ParticleGrid::identifyRegionBorders()
 
     for (unsigned int modelIdx = 0; modelIdx < numFluidModels; modelIdx++)
     {
-        std::vector<unsigned int> &borderLevels = m_regionBorderLevels[modelIdx];
-        std::fill_n(borderLevels.data(), borderLevels.size(), UINT32_MAX);
+        std::vector<unsigned int> &cellBorderLevels = m_cellBorderLevels[modelIdx];
+        std::fill_n(cellBorderLevels.data(), cellBorderLevels.size(), UINT32_MAX);
 
-        std::vector<unsigned int>& isBorder = m_isBorder[modelIdx];
-        std::fill_n(isBorder.data(), isBorder.size(), 0);
+        std::vector<unsigned int>& isBorder = m_particleBorderLevels[modelIdx];
+        std::fill_n(isBorder.data(), isBorder.size(), UINT32_MAX);
     }
 
     for (unsigned int modelIdx = 0; modelIdx < numFluidModels; modelIdx++)
     {
         #pragma omp parallel default(shared)
         {
-            std::vector<unsigned int> &borderLevels = m_regionBorderLevels[modelIdx];
+            std::vector<unsigned int> &cellBorderLevels = m_cellBorderLevels[modelIdx];
             std::vector<GridCell> &gridCells = m_cells[modelIdx];
-            const int cellCount = (int)borderLevels.size();
+            const int cellCount = (int)cellBorderLevels.size();
             const int zStep = m_resolution.x() * m_resolution.y();
 
             #pragma omp for schedule(static)
@@ -495,24 +495,25 @@ void ParticleGrid::identifyRegionBorders()
                                 this cell is part of a border. */
                             if (neighborCell.pairIndexBegin != neighborCell.pairIndexEnd && neighborCell.regionLevel < cellLevel)
                             {
-                                borderLevels[cellIdx] = std::min(borderLevels[cellIdx], neighborCell.regionLevel);
+                                cellBorderLevels[cellIdx] = std::min(cellBorderLevels[cellIdx], neighborCell.regionLevel);
                             }
                         }
                     }
                 }
 
-                if (borderLevels[cellIdx] != UINT32_MAX)
+                const unsigned int cellBorderLevel = cellBorderLevels[cellIdx];
+                if (cellBorderLevel != UINT32_MAX)
                 {
                     unsigned int pairIdx = cell.pairIndexBegin;
                     const unsigned int pairIdxEnd = cell.pairIndexEnd;
 
-                    std::vector<unsigned int>& isBorder = m_isBorder[modelIdx];
+                    std::vector<unsigned int>& particleBorderLevels = m_particleBorderLevels[modelIdx];
                     std::vector<CellParticlePair>& cellParticlePairs = m_cellParticlePairs[modelIdx];
 
                     while (pairIdx < pairIdxEnd)
                     {
                         const unsigned int particleIdx = cellParticlePairs[pairIdx++].particleIndex;
-                        isBorder[particleIdx] = 1;
+                        particleBorderLevels[particleIdx] = cellBorderLevel;
                     }
                 }
             }
@@ -530,7 +531,7 @@ void ParticleGrid::writeBorderIndices()
         std::vector<unsigned int>& borderParticleIndices = m_borderParticleIndices[modelIdx];
         borderParticleIndices.clear();
 
-        std::vector<unsigned int> &borderLevels = m_regionBorderLevels[modelIdx];
+        std::vector<unsigned int> &borderLevels = m_cellBorderLevels[modelIdx];
         std::vector<GridCell> &gridCells = m_cells[modelIdx];
         std::vector<CellParticlePair>& cellParticlePairs = m_cellParticlePairs[modelIdx];
 

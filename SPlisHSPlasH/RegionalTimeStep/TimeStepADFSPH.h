@@ -32,6 +32,8 @@ namespace SPH
 		unsigned int m_lastCalculatedLevel;
 		unsigned int m_highestLevelToStep; // The highest region level that is or has been stepped in the current step
 
+		unsigned int stepNr = 0; // todo: remove
+
 		std::vector<FluidModelCopy*> m_fluidModelCopies;
 		std::vector<FluidModel*> m_originalFluidModel;
 
@@ -56,7 +58,12 @@ namespace SPH
 		void performNeighborhoodSearch();
 		void calculateLevel(unsigned int level, Real dt);
 		void interpolateBorderParticles(unsigned int level);
-		void correctAccelerations(unsigned int level);
+
+		// Each step, sets the current acceleration to the average of all levels.
+		void correctAccelerations1(unsigned int level);
+		/*	Each step, calculate the average acceleration of all levels. In the final substep, in level 0, set the
+			acceleration to the average of each substep's calculated average. */
+		void correctAccelerations2(unsigned int level);
 
 		void setActiveParticles(unsigned int level);
 

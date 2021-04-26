@@ -55,8 +55,8 @@ namespace SPH
             FORCE_INLINE const Vector3f& getGridSize() const { return m_gridSize; }
             FORCE_INLINE unsigned int getParticleLevel(unsigned int modelIdx, unsigned int particleIdx) const { return m_particleLevels[modelIdx][particleIdx]; }
 
-            FORCE_INLINE bool isBorder(unsigned int fluidModelIndex, unsigned int i) const { return m_isBorder[fluidModelIndex][i] == 1; }
-            FORCE_INLINE const unsigned int* getBorderArray(unsigned int modelIdx) const { return m_isBorder[modelIdx].data(); }
+            FORCE_INLINE bool isBorder(unsigned int fluidModelIndex, unsigned int i) const { return m_particleBorderLevels[fluidModelIndex][i] != UINT32_MAX; }
+            FORCE_INLINE const unsigned int* getParticleBorderLevels(unsigned int modelIdx) const { return m_particleBorderLevels[modelIdx].data(); }
 
         private:
             void initGridSizeAndResolution();
@@ -113,10 +113,10 @@ namespace SPH
 
             /*  One element per cell. If a cell is in a region border, its regional level will be stored. If the cell
                 is not in a border, UINT32_MAX will be stored instead. */
-            std::vector<std::vector<unsigned int>> m_regionBorderLevels;
+            std::vector<std::vector<unsigned int>> m_cellBorderLevels;
 
             // One element per particle. 1 signifies that a particle is in a regional border
-            std::vector<std::vector<unsigned int>> m_isBorder;
+            std::vector<std::vector<unsigned int>> m_particleBorderLevels;
 
             std::array<std::vector<unsigned int>, REGION_LEVELS_COUNT - 1> m_levelBorderParticleCounts;
 

@@ -40,6 +40,5 @@ void main()
 
 	// compute final color
     uint colorIndex = In.level * (1u - In.isBorder) + (NUM_COLORS - 1u) * In.isBorder;
-    // uint colorIndex = mix(In.level, NUM_COLORS - 1u, In.isBorder);
     out_color = vec4(levelColors[colorIndex], 1.0);
 }
