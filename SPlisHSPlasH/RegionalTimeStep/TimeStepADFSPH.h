@@ -26,6 +26,7 @@ namespace SPH
 		unsigned int m_iterationsV;
 		Real m_maxErrorV;
 		unsigned int m_maxIterationsV;
+		Real m_nextTimeStep;
 		/*	m_subStepNr helps keep track of which regional levels need to be calculated in the current step.
 			Has a value within the interval [0, TIMESTEP_MULTIPLIER^(LEVEL_COUNT - 1)). */
 		unsigned int m_subStepNr;
@@ -37,7 +38,7 @@ namespace SPH
 		std::vector<FluidModelCopy*> m_fluidModelCopies;
 		std::vector<FluidModel*> m_originalFluidModel;
 
-		void checkVelocities();
+		void checkParticles();
 		void computeDFSPHFactor(const unsigned int fluidModelIndex);
 		void pressureSolve();
 		void pressureSolveIteration(const unsigned int fluidModelIndex, Real &avg_density_err);

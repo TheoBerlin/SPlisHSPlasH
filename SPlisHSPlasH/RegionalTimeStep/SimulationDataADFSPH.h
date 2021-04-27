@@ -1,6 +1,9 @@
 #ifndef __SimulationDataADFSPH_h__
 #define __SimulationDataADFSPH_h__
 
+#define GOOD_I 14
+#define BAD_I 0
+
 #include "SPlisHSPlasH/DFSPH/SimulationDataDFSPH.h"
 #include "SPlisHSPlasH/Utilities/MathFunctions.h"
 #include "ParticleGrid.h"
@@ -38,6 +41,7 @@ namespace SPH
 			std::vector<std::vector<Real>> m_density_adv;
 			// Corrected acceleration
 			std::vector<std::vector<VectorAcc>> m_correctedA;
+			std::vector<std::vector<Real>> m_time;
 
 		public:
 
@@ -135,6 +139,11 @@ namespace SPH
 			FORCE_INLINE VectorAcc& getCorrectedA(const unsigned int fluidIndex, const unsigned int i)
 			{
 				return m_correctedA[fluidIndex][i];
+			}
+
+			FORCE_INLINE Real& getTime(const unsigned int fluidIndex, const unsigned int i)
+			{
+				return m_time[fluidIndex][i];
 			}
 	};
 }

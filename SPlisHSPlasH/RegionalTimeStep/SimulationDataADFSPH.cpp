@@ -9,7 +9,8 @@ SimulationDataADFSPH::SimulationDataADFSPH() :
 	m_kappa(),
 	m_kappaV(),
 	m_density_adv(),
-	m_correctedA()
+	m_correctedA(),
+	m_time()
 {
 }
 
@@ -29,6 +30,7 @@ void SimulationDataADFSPH::init()
 	m_kappaV.resize(nModels);
 	m_density_adv.resize(nModels);
 	m_correctedA.resize(nModels);
+	m_time.resize(nModels);
 	for (unsigned int i = 0; i < nModels; i++)
 	{
 		FluidModel *fm = sim->getFluidModel(i);
@@ -37,6 +39,9 @@ void SimulationDataADFSPH::init()
 		m_kappaV[i].resize(fm->numParticles(), 0.0);
 		m_density_adv[i].resize(fm->numParticles(), 0.0);
 		m_correctedA[i].resize(fm->numParticles());
+		m_time[i].resize(fm->numParticles());
+
+		std::fill_n(m_time[i].data(), fm->numParticles(), 0.0f);
 	}
 }
 
@@ -80,10 +85,16 @@ void SimulationDataADFSPH::copyData(const SimulationDataADFSPH* other, unsigned 
 	{
 		const unsigned int i = particleIndices[particleNr];
 
+		if (i == GOOD_I || i == BAD_I)
+		{
+			printf("[%d] Copy: %f -> %f\n", i, m_time[modelIdx][i], other->m_time[modelIdx][i]);
+		}
+
 		m_factor[modelIdx][i] = other->m_factor[modelIdx][i];
 		m_kappa[modelIdx][i] = other->m_kappa[modelIdx][i];
 		m_kappaV[modelIdx][i] = other->m_kappaV[modelIdx][i];
 		m_density_adv[modelIdx][i] = other->m_density_adv[modelIdx][i];
+		m_time[modelIdx][i] = other->m_time[modelIdx][i];
 	}
 }
 
@@ -93,12 +104,17 @@ void SimulationDataADFSPH::copyData(SimulationDataADFSPH* other, unsigned int mo
 	{
 		const unsigned int i = particleIndices[particleNr];
 
-		if (!isBorder[i])
+		if (isBorder[i] == UINT32_MAX)
 		{
+			if (i == GOOD_I || i == BAD_I)
+			{
+				printf("[%d] Copy: %f -> %f\n", i, m_time[modelIdx][i], other->m_time[modelIdx][i]);
+			}
 			m_factor[modelIdx][i] = other->m_factor[modelIdx][i];
 			m_kappa[modelIdx][i] = other->m_kappa[modelIdx][i];
 			m_kappaV[modelIdx][i] = other->m_kappaV[modelIdx][i];
 			m_density_adv[modelIdx][i] = other->m_density_adv[modelIdx][i];
+			m_time[modelIdx][i] = other->m_time[modelIdx][i];
 		}
 		else
 		{
@@ -118,6 +134,15 @@ void SimulationDataADFSPH::copyData(SimulationDataADFSPH* other, unsigned int mo
 			temp = m_density_adv[modelIdx][i];
 			m_density_adv[modelIdx][i] = other->m_density_adv[modelIdx][i];
 			other->m_density_adv[modelIdx][i] = temp;
+
+			if (i == GOOD_I || i == BAD_I)
+			{
+				printf("[%d] Swap: %f -> %f\n", i, m_time[modelIdx][i], other->m_time[modelIdx][i]);
+			}
+
+			temp = m_time[modelIdx][i];
+			m_time[modelIdx][i] = other->m_time[modelIdx][i];
+			other->m_time[modelIdx][i] = temp;
 		}
 	}
 }
@@ -128,7 +153,7 @@ void SimulationDataADFSPH::swapData(SimulationDataADFSPH* other, unsigned int mo
 	{
 		const unsigned int i = particleIndices[particleNr];
 
-		if (isBorder[i])
+		if (isBorder[i] != UINT32_MAX)
 		{
 			// Swap data with other data storage
 			Real temp = m_factor[modelIdx][i];
@@ -146,6 +171,14 @@ void SimulationDataADFSPH::swapData(SimulationDataADFSPH* other, unsigned int mo
 			temp = m_density_adv[modelIdx][i];
 			m_density_adv[modelIdx][i] = other->m_density_adv[modelIdx][i];
 			other->m_density_adv[modelIdx][i] = temp;
+
+			if (i == GOOD_I || i == BAD_I)
+			{
+				printf("[%d] Swap: %f -> %f\n", i, m_time[modelIdx][i], other->m_time[modelIdx][i]);
+			}
+			temp = m_time[modelIdx][i];
+			m_time[modelIdx][i] = other->m_time[modelIdx][i];
+			other->m_time[modelIdx][i] = temp;
 		}
 	}
 }
