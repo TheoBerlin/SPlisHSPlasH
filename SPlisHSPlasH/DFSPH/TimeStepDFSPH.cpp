@@ -93,9 +93,6 @@ void TimeStepDFSPH::step()
 	const Real h = tm->getTimeStepSize();
 	const unsigned int nModels = sim->numberOfFluidModels();
 
-	if (SceneConfiguration::getCurrent()->getScene().useRegionalTimeStepping)
-		m_particleGrid.determineRegions();
-
 	performNeighborhoodSearch();
 
 #ifdef USE_PERFORMANCE_OPTIMIZATION
@@ -128,7 +125,7 @@ void TimeStepDFSPH::step()
 	for (unsigned int fluidModelIndex = 0; fluidModelIndex < nModels; fluidModelIndex++)
 		clearAccelerations(fluidModelIndex);
 
-	sim->computeNonPressureForces();
+	// sim->computeNonPressureForces();
 
 	sim->updateTimeStepSize();
 
@@ -328,9 +325,6 @@ void TimeStepDFSPH::divergenceSolve()
 
 			avg_density_err = 0.0;
 			divergenceSolveIteration(i, avg_density_err);
-
-			if (TimeManager::getCurrent()->getTime() > 0.47f)
-				debugParticle(0, 6681);
 
 			// Maximal allowed density fluctuation
 			// use maximal density error divided by time step size
@@ -1729,114 +1723,4 @@ void TimeStepDFSPH::emittedParticles(FluidModel *model, const unsigned int start
 void TimeStepDFSPH::resize()
 {
 	m_simulationData.init();
-}
-
-void TimeStepDFSPH::debugParticle(unsigned int fluidModelIndex, unsigned int i)
-{
-	Simulation* sim = Simulation::getCurrent();
-	const unsigned int nFluids = sim->numberOfFluidModels();
-	FluidModel* model = sim->getFluidModel(fluidModelIndex);
-
-	const bool isBorderParticle = m_particleGrid.isBorder(fluidModelIndex, i);
-	const unsigned int particleLevel = m_particleGrid.getParticleLevel(fluidModelIndex, i);
-	const Real kappa = m_simulationData.getKappa(fluidModelIndex, i);
-	const Real factor = m_simulationData.getFactor(fluidModelIndex, i);
-	const Real dens = model->getDensity(i);
-	const Real densAdv = m_simulationData.getDensityAdv(fluidModelIndex, i);
-
-	const unsigned int numNeightbors = sim->numberOfNeighbors(fluidModelIndex, 0, i);
-
-	struct Neighbor {
-		unsigned int NeighborLevel;
-		bool IsBorder;
-		Real Kappa;
-	};
-
-	std::vector<Neighbor> neighbors;
-	neighbors.reserve(numNeightbors);
-
-	const Vector3r& xi = model->getPosition(i);
-
-	Real maxNeighborDist = 0.0f;
-	forall_fluid_neighbors(
-		maxNeighborDist = std::max(maxNeighborDist, (xi - xj).norm());
-
-		neighbors.push_back(
-			Neighbor({
-				m_particleGrid.getParticleLevel(pid, neighborIndex),
-				m_particleGrid.isBorder(fluidModelIndex, i),
-				m_simulationData.getKappa(pid, neighborIndex)
-			})
-		);
-	)
-
-	const Real supportRadius = sim->getSupportRadius();
-
-	const unsigned int levelParticleCount = m_particleGrid.getLevelParticleCounts(0)[fluidModelIndex];
-	const unsigned int numParticles = model->numActiveParticles();
-	const unsigned int* particleIndices = model->getParticleIndices();
-
-	for (unsigned int particleNr = 0; particleNr < levelParticleCount; particleNr++)
-	{
-		const unsigned int j = particleIndices[particleNr];
-		const unsigned int jParticleLevel = m_particleGrid.getParticleLevel(fluidModelIndex, j);
-		const bool jIsBorder = m_particleGrid.isBorder(fluidModelIndex, j);
-		const Real jKappa = m_simulationData.getKappa(fluidModelIndex, j);
-		const Real jFactor = m_simulationData.getFactor(fluidModelIndex, j);
-		const Real jDens = model->getDensity(j);
-		const Real jDensAdv = m_simulationData.getDensityAdv(fluidModelIndex, j);
-
-		if (jParticleLevel != 0 && !jIsBorder)
-			int a = 0;
-	}
-
-	if (particleLevel != 0 && !isBorderParticle)
-		int a = 0;
-
-	int a = 0;
-}
-
-void TimeStepDFSPH::checkVelocities()
-{
-	Simulation *sim = Simulation::getCurrent();
-	TimeManager *tm = TimeManager::getCurrent();
-
-	const Real dt = tm->getTimeStepSize();
-	const Vector3f particleBounds = m_particleGrid.getGridSize();
-
- 	const unsigned int nFluids = sim->numberOfFluidModels();
-
-	for (unsigned int modelIdx = 0; modelIdx < nFluids; modelIdx++)
-	{
-		#pragma omp parallel default(shared)
- 		{
-			FluidModel *model = sim->getFluidModel(modelIdx);
-			const unsigned int* particleIndices = model->getParticleIndices();
-			const unsigned int nParticles = model->numActiveParticles();
-
-			#pragma omp for schedule(static)
-			for (int i = 0; i < nParticles; i++)
-			{
-				if (model->getParticleState(i) == ParticleState::Active)
-				{
-					const Vector3r& position = model->getPosition(i);
-					const Vector3r& velocity = model->getVelocity(i);
-
-					const Vector3f newPos = (position + velocity * dt).cwiseAbs();
-					if (newPos.x() > particleBounds.x() || newPos.y() > particleBounds.y() || newPos.z() > particleBounds.z())
-					{
-						debugParticle(modelIdx, i);
-					}
-					if (velocity.norm() > 100.0f)
-					{
-						debugParticle(modelIdx, i);
-					}
-					if (position.x() != position.x() || velocity.x() != velocity.x()) // nan check
-						int a = 0;
-					if (std::abs(m_simulationData.getKappa(modelIdx, i)) > 10000.0f)
-						debugParticle(modelIdx, i);
-				}
-			}
-		}
-	}
 }

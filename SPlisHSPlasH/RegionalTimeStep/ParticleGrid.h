@@ -6,7 +6,7 @@
 #include <array>
 #include <vector>
 
-#define REGION_LEVELS_COUNT 2
+#define REGION_LEVELS_COUNT 3
 // Equivalent to the 'N' variable in Koike et al.
 #define LEVEL_TIMESTEP_MULTIPLIER 2
 

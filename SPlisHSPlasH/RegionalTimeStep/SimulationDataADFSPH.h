@@ -41,7 +41,6 @@ namespace SPH
 			std::vector<std::vector<Real>> m_density_adv;
 			// Corrected acceleration
 			std::vector<std::vector<VectorAcc>> m_correctedA;
-			std::vector<std::vector<Real>> m_time;
 
 		public:
 
@@ -60,10 +59,10 @@ namespace SPH
 			void copyData(const SimulationDataADFSPH* other, unsigned int modelIdx, const unsigned int* particleIndices, unsigned int particleCount);
 
 			// Copies data, and swaps data with other data storage if a particle is part of a border
-			void copyData(SimulationDataADFSPH* other, unsigned int modelIdx, const unsigned int* particleIndices, const unsigned int* isBorder, unsigned int particleCount);
+			void copyData(SimulationDataADFSPH* other, unsigned int modelIdx, const unsigned int* particleIndices, const unsigned int* isBorder, int particleCount);
 
 			// Swaps data with other data storage if a particle is part of a border
-			void swapData(SimulationDataADFSPH* other, unsigned int modelIdx, const unsigned int* particleIndices, const unsigned int* isBorder, unsigned int particleCount);
+			void swapData(SimulationDataADFSPH* other, unsigned int modelIdx, const unsigned int* particleIndices, const unsigned int* isBorder, int particleCount);
 
 			/** Important: First call m_model->performNeighborhoodSearchSort()
 			 * to call the z_sort of the neighborhood search.
@@ -139,11 +138,6 @@ namespace SPH
 			FORCE_INLINE VectorAcc& getCorrectedA(const unsigned int fluidIndex, const unsigned int i)
 			{
 				return m_correctedA[fluidIndex][i];
-			}
-
-			FORCE_INLINE Real& getTime(const unsigned int fluidIndex, const unsigned int i)
-			{
-				return m_time[fluidIndex][i];
 			}
 	};
 }

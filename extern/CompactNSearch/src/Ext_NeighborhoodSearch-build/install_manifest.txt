@@ -3,4 +3,4 @@ D:/Documents/SPlisHSPlasH/extern/install/NeighborhoodSearch/include/Config.h
 D:/Documents/SPlisHSPlasH/extern/install/NeighborhoodSearch/include/CompactNSearch.h
 D:/Documents/SPlisHSPlasH/extern/install/NeighborhoodSearch/include/PointSet.h
 D:/Documents/SPlisHSPlasH/extern/install/NeighborhoodSearch/include/DataStructures.h
-D:/Documents/SPlisHSPlasH/extern/install/NeighborhoodSearch/lib/CompactNSearch_d.lib
+D:/Documents/SPlisHSPlasH/extern/install/NeighborhoodSearch/lib/CompactNSearch.lib

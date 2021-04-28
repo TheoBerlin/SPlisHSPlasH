@@ -9,8 +9,7 @@ SimulationDataADFSPH::SimulationDataADFSPH() :
 	m_kappa(),
 	m_kappaV(),
 	m_density_adv(),
-	m_correctedA(),
-	m_time()
+	m_correctedA()
 {
 }
 
@@ -30,7 +29,6 @@ void SimulationDataADFSPH::init()
 	m_kappaV.resize(nModels);
 	m_density_adv.resize(nModels);
 	m_correctedA.resize(nModels);
-	m_time.resize(nModels);
 	for (unsigned int i = 0; i < nModels; i++)
 	{
 		FluidModel *fm = sim->getFluidModel(i);
@@ -39,9 +37,6 @@ void SimulationDataADFSPH::init()
 		m_kappaV[i].resize(fm->numParticles(), 0.0);
 		m_density_adv[i].resize(fm->numParticles(), 0.0);
 		m_correctedA[i].resize(fm->numParticles());
-		m_time[i].resize(fm->numParticles());
-
-		std::fill_n(m_time[i].data(), fm->numParticles(), 0.0f);
 	}
 }
 
@@ -85,100 +80,80 @@ void SimulationDataADFSPH::copyData(const SimulationDataADFSPH* other, unsigned 
 	{
 		const unsigned int i = particleIndices[particleNr];
 
-		if (i == GOOD_I || i == BAD_I)
-		{
-			printf("[%d] Copy: %f -> %f\n", i, m_time[modelIdx][i], other->m_time[modelIdx][i]);
-		}
-
 		m_factor[modelIdx][i] = other->m_factor[modelIdx][i];
 		m_kappa[modelIdx][i] = other->m_kappa[modelIdx][i];
 		m_kappaV[modelIdx][i] = other->m_kappaV[modelIdx][i];
 		m_density_adv[modelIdx][i] = other->m_density_adv[modelIdx][i];
-		m_time[modelIdx][i] = other->m_time[modelIdx][i];
 	}
 }
 
-void SimulationDataADFSPH::copyData(SimulationDataADFSPH* other, unsigned int modelIdx, const unsigned int* particleIndices, const unsigned int* isBorder, unsigned int particleCount)
+void SimulationDataADFSPH::copyData(SimulationDataADFSPH* other, unsigned int modelIdx, const unsigned int* particleIndices, const unsigned int* isBorder, int particleCount)
 {
-	for (unsigned int particleNr = 0; particleNr < particleCount; particleNr++)
+	#pragma omp parallel default(shared)
 	{
-		const unsigned int i = particleIndices[particleNr];
-
-		if (isBorder[i] == UINT32_MAX)
+		#pragma omp for schedule(static)
+		for (int particleNr = 0; particleNr < particleCount; particleNr++)
 		{
-			if (i == GOOD_I || i == BAD_I)
+			const unsigned int i = particleIndices[particleNr];
+
+			if (isBorder[i] == UINT32_MAX)
 			{
-				printf("[%d] Copy: %f -> %f\n", i, m_time[modelIdx][i], other->m_time[modelIdx][i]);
+				m_factor[modelIdx][i] = other->m_factor[modelIdx][i];
+				m_kappa[modelIdx][i] = other->m_kappa[modelIdx][i];
+				m_kappaV[modelIdx][i] = other->m_kappaV[modelIdx][i];
+				m_density_adv[modelIdx][i] = other->m_density_adv[modelIdx][i];
 			}
-			m_factor[modelIdx][i] = other->m_factor[modelIdx][i];
-			m_kappa[modelIdx][i] = other->m_kappa[modelIdx][i];
-			m_kappaV[modelIdx][i] = other->m_kappaV[modelIdx][i];
-			m_density_adv[modelIdx][i] = other->m_density_adv[modelIdx][i];
-			m_time[modelIdx][i] = other->m_time[modelIdx][i];
-		}
-		else
-		{
-			// Swap data with other data storage
-			Real temp = m_factor[modelIdx][i];
-			m_factor[modelIdx][i] = other->m_factor[modelIdx][i];
-			other->m_factor[modelIdx][i] = temp;
-
-			temp = m_kappa[modelIdx][i];
-			m_kappa[modelIdx][i] = other->m_kappa[modelIdx][i];
-			other->m_kappa[modelIdx][i] = temp;
-
-			temp = m_kappaV[modelIdx][i];
-			m_kappaV[modelIdx][i] = other->m_kappaV[modelIdx][i];
-			other->m_kappaV[modelIdx][i] = temp;
-
-			temp = m_density_adv[modelIdx][i];
-			m_density_adv[modelIdx][i] = other->m_density_adv[modelIdx][i];
-			other->m_density_adv[modelIdx][i] = temp;
-
-			if (i == GOOD_I || i == BAD_I)
+			else
 			{
-				printf("[%d] Swap: %f -> %f\n", i, m_time[modelIdx][i], other->m_time[modelIdx][i]);
-			}
+				// Swap data with other data storage
+				Real temp = m_factor[modelIdx][i];
+				m_factor[modelIdx][i] = other->m_factor[modelIdx][i];
+				other->m_factor[modelIdx][i] = temp;
 
-			temp = m_time[modelIdx][i];
-			m_time[modelIdx][i] = other->m_time[modelIdx][i];
-			other->m_time[modelIdx][i] = temp;
+				temp = m_kappa[modelIdx][i];
+				m_kappa[modelIdx][i] = other->m_kappa[modelIdx][i];
+				other->m_kappa[modelIdx][i] = temp;
+
+				temp = m_kappaV[modelIdx][i];
+				m_kappaV[modelIdx][i] = other->m_kappaV[modelIdx][i];
+				other->m_kappaV[modelIdx][i] = temp;
+
+				temp = m_density_adv[modelIdx][i];
+				m_density_adv[modelIdx][i] = other->m_density_adv[modelIdx][i];
+				other->m_density_adv[modelIdx][i] = temp;
+			}
 		}
 	}
 }
 
-void SimulationDataADFSPH::swapData(SimulationDataADFSPH* other, unsigned int modelIdx, const unsigned int* particleIndices, const unsigned int* isBorder, unsigned int particleCount)
+void SimulationDataADFSPH::swapData(SimulationDataADFSPH* other, unsigned int modelIdx, const unsigned int* particleIndices, const unsigned int* isBorder, int particleCount)
 {
-	for (unsigned int particleNr = 0; particleNr < particleCount; particleNr++)
+	#pragma omp parallel default(shared)
 	{
-		const unsigned int i = particleIndices[particleNr];
-
-		if (isBorder[i] != UINT32_MAX)
+		#pragma omp for schedule(static)
+		for (int particleNr = 0; particleNr < particleCount; particleNr++)
 		{
-			// Swap data with other data storage
-			Real temp = m_factor[modelIdx][i];
-			m_factor[modelIdx][i] = other->m_factor[modelIdx][i];
-			other->m_factor[modelIdx][i] = temp;
+			const unsigned int i = particleIndices[particleNr];
 
-			temp = m_kappa[modelIdx][i];
-			m_kappa[modelIdx][i] = other->m_kappa[modelIdx][i];
-			other->m_kappa[modelIdx][i] = temp;
-
-			temp = m_kappaV[modelIdx][i];
-			m_kappaV[modelIdx][i] = other->m_kappaV[modelIdx][i];
-			other->m_kappaV[modelIdx][i] = temp;
-
-			temp = m_density_adv[modelIdx][i];
-			m_density_adv[modelIdx][i] = other->m_density_adv[modelIdx][i];
-			other->m_density_adv[modelIdx][i] = temp;
-
-			if (i == GOOD_I || i == BAD_I)
+			if (isBorder[i] != UINT32_MAX)
 			{
-				printf("[%d] Swap: %f -> %f\n", i, m_time[modelIdx][i], other->m_time[modelIdx][i]);
+				// Swap data with other data storage
+				Real temp = m_factor[modelIdx][i];
+				m_factor[modelIdx][i] = other->m_factor[modelIdx][i];
+				other->m_factor[modelIdx][i] = temp;
+
+				temp = m_kappa[modelIdx][i];
+				m_kappa[modelIdx][i] = other->m_kappa[modelIdx][i];
+				other->m_kappa[modelIdx][i] = temp;
+
+				temp = m_kappaV[modelIdx][i];
+				m_kappaV[modelIdx][i] = other->m_kappaV[modelIdx][i];
+				other->m_kappaV[modelIdx][i] = temp;
+
+				temp = m_density_adv[modelIdx][i];
+				m_density_adv[modelIdx][i] = other->m_density_adv[modelIdx][i];
+				other->m_density_adv[modelIdx][i] = temp;
 			}
-			temp = m_time[modelIdx][i];
-			m_time[modelIdx][i] = other->m_time[modelIdx][i];
-			other->m_time[modelIdx][i] = temp;
 		}
 	}
 }

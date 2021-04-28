@@ -24,10 +24,6 @@ ParticleGrid::~ParticleGrid()
 
 void ParticleGrid::init()
 {
-    Utilities::SceneLoader::Scene &scene = SceneConfiguration::getCurrent()->getScene();
-    if (!scene.useRegionalTimeStepping)
-        return;
-
     initGridSizeAndResolution();
 
     Simulation *simulation = Simulation::getCurrent();
@@ -374,7 +370,7 @@ Real ParticleGrid::findMaxSpeedSquared()
         }
     }
 
-    printf("Max Speed: %f\n", std::sqrtf(m_maxSpeedSquared));
+    // printf("Max Speed: %f\n", std::sqrtf(m_maxSpeedSquared));
     return m_maxSpeedSquared;
 }
 

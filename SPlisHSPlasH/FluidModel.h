@@ -178,17 +178,10 @@ namespace SPH
 
 		public:
 			void copyParticleData(const FluidModel* fluidModel);
-			void copyParticleData(const FluidModel* fluidModel, const unsigned int* particleIndices, unsigned int numParticles);
-
-			// Copies data, and swaps data with other fluid model if a particle is part of a border
-			void copyParticleData(FluidModel* fluidModel, const unsigned int* particleIndices, const unsigned int* particleBorderLevels, unsigned int numParticles);
+			void copyParticleData(const FluidModel* fluidModel, const unsigned int* particleIndices, int numParticles);
 
 			// Swap data with other fluid model if a particle is part of a border
-			void swapParticleData(FluidModel* fluidModel, const unsigned int* particleIndices, const unsigned int* particleBorderLevels, unsigned int numParticles);
-
-		#ifdef USE_PERFORMANCE_OPTIMIZATION
-			void copyPrecomputedParticleData(const FluidModel* fluidModel);
-		#endif
+			void swapParticleData(FluidModel* fluidModel, const unsigned int* particleIndices, const unsigned int* particleBorderLevels, int numParticles);
 
 			FORCE_INLINE Real getDensity0() const { return m_density0; }
 			void setDensity0(const Real v);

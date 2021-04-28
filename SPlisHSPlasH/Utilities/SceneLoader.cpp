@@ -55,9 +55,6 @@ void SceneLoader::readScene(const char *fileName, Scene &scene)
 		readVector(config["cameraPosition"], scene.camPosition);
 		scene.camLookat = Vector3r(0.0, 0.0, 0.0);
 		readVector(config["cameraLookat"], scene.camLookat);
-
-		scene.useRegionalTimeStepping = false;
-		readValue(config["useRegionalTimeStepping"], scene.useRegionalTimeStepping);
 	}
 
 	//////////////////////////////////////////////////////////////////////////

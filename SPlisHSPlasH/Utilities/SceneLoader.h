@@ -121,7 +121,6 @@ namespace Utilities
 			std::vector<AnimationFieldData*> animatedFields;
 			std::vector<MaterialData*> materials;
 			Real particleRadius;
-			bool useRegionalTimeStepping;
 			bool sim2D;
 			Real timeStepSize;
 			Vector3r camPosition;

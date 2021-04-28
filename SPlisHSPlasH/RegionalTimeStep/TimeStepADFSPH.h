@@ -33,12 +33,10 @@ namespace SPH
 		unsigned int m_lastCalculatedLevel;
 		unsigned int m_highestLevelToStep; // The highest region level that is or has been stepped in the current step
 
-		unsigned int stepNr = 0; // todo: remove
-
 		std::vector<FluidModelCopy*> m_fluidModelCopies;
 		std::vector<FluidModel*> m_originalFluidModel;
 
-		void checkParticles();
+		// void checkParticles();
 		void computeDFSPHFactor(const unsigned int fluidModelIndex);
 		void pressureSolve();
 		void pressureSolveIteration(const unsigned int fluidModelIndex, Real &avg_density_err);
@@ -66,13 +64,17 @@ namespace SPH
 			acceleration to the average of each substep's calculated average. */
 		void correctAccelerations2(unsigned int level);
 
+		void updatePositions();
+
 		void setActiveParticles(unsigned int level);
 
 		virtual void emittedParticles(FluidModel *model, const unsigned int startIndex);
 
 		virtual void initParameters();
 
-		void debugParticle(unsigned int fluidModelIndex, unsigned int i);
+		void findHighestNonEmptyLevel();
+
+		// void debugParticle(unsigned int fluidModelIndex, unsigned int i);
 
 	public:
 		static int SOLVER_ITERATIONS_V;
