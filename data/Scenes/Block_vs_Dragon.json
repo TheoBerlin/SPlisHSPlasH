@@ -1,13 +1,13 @@
 {
 	"Configuration":
 	{
-		"particleRadius": 0.01,
-		"simulationMethod": 4,
+		"particleRadius": 0.025,
+		"simulationMethod": 6,
 		"numberOfStepsPerRenderUpdate": 2,
 		"gravitation": [0,-9.81,0],
 		"cflMethod": 1,
 		"cflFactor": 1.0,
-		"cflMaxTimeStepSize": 0.005,
+		"cflMaxTimeStepSize": 0.01,
 		"maxIterations": 100,
 		"maxError": 0.05,
 		"maxIterationsV": 100,

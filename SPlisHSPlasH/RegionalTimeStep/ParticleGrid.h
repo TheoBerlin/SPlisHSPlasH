@@ -94,7 +94,6 @@ namespace SPH
 
             // Each particle's cell index
             std::vector<std::vector<CellParticlePair>> m_cellParticlePairs;
-            // Each particle's level. This is only used for rendering particle region colors, and can be toggled.
             std::vector<std::vector<unsigned int>> m_particleLevels;
 
             // Particle indices, sorted by regional level

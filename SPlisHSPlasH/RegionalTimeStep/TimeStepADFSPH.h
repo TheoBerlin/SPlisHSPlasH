@@ -65,6 +65,11 @@ namespace SPH
 		void correctAccelerations2(unsigned int level);
 
 		void updatePositions();
+		void storeOldVelocities();
+
+		/*	Calculates the acceleration resulting from pressure solving. The acceleration is averaged between
+			accelerations calculated in different regional levels. */
+		void calculateAverageAcceleration(unsigned int level);
 
 		void setActiveParticles(unsigned int level);
 

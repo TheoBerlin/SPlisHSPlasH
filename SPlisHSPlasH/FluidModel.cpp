@@ -365,15 +365,18 @@ void SPH::FluidModel::copyParticleData(const FluidModel* fluidModel, const unsig
 		{
 			const unsigned int i = particleIndices[particleNr];
 
-			m_masses[i] = fluidModel->m_masses[i];
-			m_a[i] = fluidModel->m_a[i];
-			m_v0[i] = fluidModel->m_v0[i];
-			m_x0[i] = fluidModel->m_x0[i];
-			m_x[i] = fluidModel->m_x[i];
-			m_v[i] = fluidModel->m_v[i];
-			m_density[i] = fluidModel->m_density[i];
-			m_particleId[i] = fluidModel->m_particleId[i];
-			m_particleState[i] = fluidModel->m_particleState[i];
+			if (fluidModel->m_particleState[i] == ParticleState::Active)
+			{
+				m_masses[i] = fluidModel->m_masses[i];
+				m_a[i] = fluidModel->m_a[i];
+				m_v0[i] = fluidModel->m_v0[i];
+				m_x0[i] = fluidModel->m_x0[i];
+				m_x[i] = fluidModel->m_x[i];
+				m_v[i] = fluidModel->m_v[i];
+				m_density[i] = fluidModel->m_density[i];
+				m_particleId[i] = fluidModel->m_particleId[i];
+				m_particleState[i] = fluidModel->m_particleState[i];
+			}
 		}
 	}
 
@@ -389,7 +392,7 @@ void SPH::FluidModel::swapParticleData(FluidModel* fluidModel, const unsigned in
 		{
 			const unsigned int i = particleIndices[particleNr];
 
-			if (particleBorderLevels[i] != UINT32_MAX)
+			if (particleBorderLevels[i] != UINT32_MAX && fluidModel->m_particleState[i] == ParticleState::Active)
 			{
 				Real tempReal = m_masses[i];
 				m_masses[i] = fluidModel->m_masses[i];

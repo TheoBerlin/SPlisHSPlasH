@@ -96,7 +96,9 @@ void TimeStepDFSPH::step()
 	performNeighborhoodSearch();
 
 #ifdef USE_PERFORMANCE_OPTIMIZATION
+	START_TIMING("Precompute Values");
 	precomputeValues();
+	STOP_TIMING_AVG;
 #endif
 
 	if (sim->getBoundaryHandlingMethod() == BoundaryHandlingMethods::Bender2019)
