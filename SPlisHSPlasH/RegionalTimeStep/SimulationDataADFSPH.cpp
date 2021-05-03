@@ -17,6 +17,7 @@ void SimulationDataADFSPH::init(bool isCopy)
 	m_density_adv.resize(nModels);
 	m_oldVelocity.resize(nModels);
 	m_averageAcceleration.resize(nModels);
+	m_averageAccelerationBorder.resize(nModels);
 
 	for (unsigned int i = 0; i < nModels; i++)
 	{
@@ -27,6 +28,7 @@ void SimulationDataADFSPH::init(bool isCopy)
 		m_density_adv[i].resize(fm->numParticles(), 0.0);
 		m_oldVelocity[i].resize(fm->numParticles());
 		m_averageAcceleration[i].resize(fm->numParticles());
+		m_averageAccelerationBorder[i].resize(fm->numParticles());
 	}
 }
 
@@ -38,6 +40,7 @@ void SimulationDataADFSPH::cleanup()
 	m_density_adv.clear();
 	m_oldVelocity.clear();
 	m_averageAcceleration.clear();
+	m_averageAccelerationBorder.clear();
 }
 
 void SimulationDataADFSPH::reset()

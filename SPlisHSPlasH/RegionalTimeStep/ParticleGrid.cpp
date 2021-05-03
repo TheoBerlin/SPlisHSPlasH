@@ -392,6 +392,7 @@ void ParticleGrid::defineCellLevels()
             for (int cellIdx = 0; cellIdx < fluidModelCells.size(); cellIdx++)
             {
                 GridCell &cell = fluidModelCells[cellIdx];
+                // cell.regionLevel = cellIdx % 3;
                 cell.regionLevel = unsigned int(std::logf(m_maxSpeedSquared / cell.maxSpeedSquared) / logN);
                 cell.regionLevel = std::min(cell.regionLevel, maxRegionalLevel);
             }

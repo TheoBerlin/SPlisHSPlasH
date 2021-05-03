@@ -1385,7 +1385,7 @@ void TimeStepADFSPH::calculateLevel(unsigned int level, Real dt)
 	if (m_enableDivergenceSolver && level == 0)
 	{
 		START_TIMING("divergenceSolve");
-		// divergenceSolve(); // Neighbor KappaV, Velocities, Advected Densities and DFSPH Factors
+		divergenceSolve(); // Neighbor KappaV, Velocities, Advected Densities and DFSPH Factors
 		STOP_TIMING_AVG
 	}
 	else
@@ -1407,10 +1407,10 @@ void TimeStepADFSPH::calculateLevel(unsigned int level, Real dt)
 		tm->setTimeStepSize(dt);
 	}
 
-	// if (m_highestLevelToStep > 0)
-	// {
-	// 	storeOldVelocities();
-	// }
+	if (m_highestLevelToStep > 0)
+	{
+		storeOldVelocities();
+	}
 
 	// compute new velocities only considering non-pressure forces
 	for (unsigned int m = 0; m < nModels; m++)
@@ -1438,10 +1438,10 @@ void TimeStepADFSPH::calculateLevel(unsigned int level, Real dt)
 	pressureSolve();
 	STOP_TIMING_AVG;
 
-	// if (m_highestLevelToStep > 0)
-	// {
-	// 	calculateAverageAcceleration(level);
-	// }
+	if (m_highestLevelToStep > 0)
+	{
+		calculateAverageAcceleration(level);
+	}
 
 	if (m_highestLevelToStep > level)
 	{
@@ -1629,7 +1629,7 @@ void TimeStepADFSPH::calculateAverageAcceleration(unsigned int level)
 				if (m_highestLevelToStep >= particleLevel)
 					interpFactor2 = 1.0f / (m_highestLevelToStep + 1 + isBorder - particleLevel);
 
-				const Vector3r acceleration = (model->getVelocity(i) - m_simulationData.getOldVelocity(modelIdx, i));
+				const Vector3r acceleration = (model->getVelocity(i) - m_simulationData.getOldVelocity(modelIdx, i)) * invDt;
 
 				Vector3r& avgAcceleration = m_simulationData.getAvgAcceleration(modelIdx, i);
 				avgAcceleration = avgAcceleration * interpFactor1 + interpFactor2 * acceleration;
@@ -1640,6 +1640,13 @@ void TimeStepADFSPH::calculateAverageAcceleration(unsigned int level)
 	// Apply the average acceleration to the velocity
 	if (level == 0)
 	{
+		// Acceleration multipliers
+		std::array<Real, REGION_LEVELS_COUNT - 1> accMultiplier;
+		for (unsigned int l = 0; l < accMultiplier.size(); l++)
+		{
+			accMultiplier[l] = (Real)MathFunctions::power((unsigned int)LEVEL_TIMESTEP_MULTIPLIER, accMultiplier.size() - l);
+		}
+
 		for (unsigned int modelIdx = 0; modelIdx < nModels; modelIdx++)
 		{
 			#pragma omp parallel default(shared)
@@ -1655,9 +1662,12 @@ void TimeStepADFSPH::calculateAverageAcceleration(unsigned int level)
 				#pragma omp for schedule(static)
 				for (int i = 0; i < numParticles; i++)
 				{
-					if (m_particleGrid.getParticleLevel(modelIdx, i) <= m_highestLevelToStep || particleBorderLevels[i] <= m_highestLevelToStep)
+					const unsigned int particleLevel = std::min(particleBorderLevels[i], m_particleGrid.getParticleLevel(modelIdx, i));
+					if (particleLevel < m_highestLevelToStep)
 					{
-						model->getPosition(i) += m_simulationData.getAvgAcceleration(modelIdx, i) * dtSq;
+						const Real multiplier = accMultiplier[particleLevel];
+						const Vector3r& acc = m_simulationData.getAvgAcceleration(modelIdx, i);
+						model->getPosition(i) += multiplier * acc * dtSq;
 					}
 				}
 			}

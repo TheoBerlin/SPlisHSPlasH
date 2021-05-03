@@ -41,6 +41,7 @@ namespace SPH
 			// Velocity of each particle before pressure solving. Used to calculate acceleration.
 			std::vector<std::vector<Vector3r>> m_oldVelocity;
 			std::vector<std::vector<Vector3r>> m_averageAcceleration;
+			std::vector<std::vector<Vector3r>> m_averageAccelerationBorder;
 
 		public:
 
@@ -143,6 +144,11 @@ namespace SPH
 			FORCE_INLINE Vector3r& getAvgAcceleration(const unsigned int fluidIndex, const unsigned int i)
 			{
 				return m_averageAcceleration[fluidIndex][i];
+			}
+
+			FORCE_INLINE Vector3r& getAvgAccelerationBorder(const unsigned int fluidIndex, const unsigned int i)
+			{
+				return m_averageAccelerationBorder[fluidIndex][i];
 			}
 	};
 }
