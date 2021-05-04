@@ -1,7 +1,7 @@
 {
 	"Configuration":
 	{
-		"particleRadius": 0.02,
+		"particleRadius": 0.01,
 		"simulationMethod": 6,
 		"numberOfStepsPerRenderUpdate": 2,
 		"gravitation": [0,-9.81,0],

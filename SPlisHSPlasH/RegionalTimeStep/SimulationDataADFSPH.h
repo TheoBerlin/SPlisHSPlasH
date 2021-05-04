@@ -65,6 +65,8 @@ namespace SPH
 			// Swaps data with other data storage if a particle is part of a border
 			void swapData(SimulationDataADFSPH* other, unsigned int modelIdx, const unsigned int* particleIndices, const ParticleState* particleStates, const unsigned int* isBorder, int particleCount);
 
+			void clearAvgAccelerations();
+
 			/** Important: First call m_model->performNeighborhoodSearchSort()
 			 * to call the z_sort of the neighborhood search.
 			 */

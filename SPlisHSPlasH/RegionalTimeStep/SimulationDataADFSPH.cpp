@@ -153,6 +153,18 @@ void SimulationDataADFSPH::swapData(SimulationDataADFSPH* other, unsigned int mo
 	}
 }
 
+void SimulationDataADFSPH::clearAvgAccelerations()
+{
+	Vector3r zeroVec;
+	zeroVec.setZero();
+
+	for (std::vector<Vector3r>& accVec : m_averageAcceleration)
+		std::fill_n(accVec.data(), accVec.size(), zeroVec);
+
+	for (std::vector<Vector3r>& accVec : m_averageAccelerationBorder)
+		std::fill_n(accVec.data(), accVec.size(), zeroVec);
+}
+
 void SimulationDataADFSPH::performNeighborhoodSearchSort()
 {
 	Simulation *sim = Simulation::getCurrent();
