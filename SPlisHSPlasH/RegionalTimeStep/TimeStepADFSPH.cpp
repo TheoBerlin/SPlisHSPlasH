@@ -1673,7 +1673,7 @@ void TimeStepADFSPH::calculateAverageAcceleration(unsigned int level)
 		}
 	}
 
-	// Apply the average acceleration to the velocity
+	// Apply the average acceleration to the position
 	if (level == 0)
 	{
 		/* Save some calculated factors to reduce redundant computation time */
@@ -1684,7 +1684,10 @@ void TimeStepADFSPH::calculateAverageAcceleration(unsigned int level)
 
 		for (unsigned int l = 0; l < m_cycleHighestLevel; l++)
 		{
-			accMultiplier[l] = (Real)MathFunctions::power((unsigned int)LEVEL_TIMESTEP_MULTIPLIER, m_cycleHighestLevel - l);
+			accMultiplier[l] = (Real)std::pow((unsigned int)LEVEL_TIMESTEP_MULTIPLIER, m_cycleHighestLevel - l);
+
+			// Decrement multipliers each time they are used
+			accMultiplier[l] -= m_subStepNr / (unsigned int)std::pow((unsigned int)LEVEL_TIMESTEP_MULTIPLIER, l);
 		}
 
 		// The squared dt's of the different levels
