@@ -5,15 +5,8 @@
 #include "SPlisHSPlasH/Utilities/MathFunctions.h"
 #include "ParticleGrid.h"
 
-// Constants for acceleration correction matrices
-#define CORR_A_ROWS MathFunctions::power(LEVEL_TIMESTEP_MULTIPLIER, REGION_LEVELS_COUNT - 1)
-#define CORR_A_COLS REGION_LEVELS_COUNT
-
-
 namespace SPH
 {
-	using VectorAcc = Eigen::Matrix<Vector3r, CORR_A_ROWS, 1, Eigen::DontAlign>;
-
 	/** \brief Simulation data which is required by the method Divergence-free Smoothed Particle Hydrodynamics introduced
 	* by Bender and Koschier [BK15,BK17].
 	*
@@ -58,9 +51,6 @@ namespace SPH
 			virtual void reset();
 
 			void copyData(const SimulationDataADFSPH* other, unsigned int modelIdx, const unsigned int* particleIndices, const ParticleState* particleStates, int particleCount);
-
-			// Copies data, and swaps data with other data storage if a particle is part of a border
-			void copyData(SimulationDataADFSPH* other, unsigned int modelIdx, const unsigned int* particleIndices, const ParticleState* particleStates, const unsigned int* isBorder, int particleCount);
 
 			// Swaps data with other data storage if a particle is part of a border
 			void swapData(SimulationDataADFSPH* other, unsigned int modelIdx, const unsigned int* particleIndices, const ParticleState* particleStates, const unsigned int* isBorder, int particleCount);

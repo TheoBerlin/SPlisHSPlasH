@@ -401,63 +401,66 @@ void TimeStepADFSPH::divergenceSolve()
 	}
 }
 
-void TimeStepADFSPH::checkParticles(const char* msg)
-{
-	Simulation *sim = Simulation::getCurrent();
-	TimeManager *tm = TimeManager::getCurrent();
+// void TimeStepADFSPH::checkParticles(const char* msg)
+// {
+// 	Simulation *sim = Simulation::getCurrent();
+// 	TimeManager *tm = TimeManager::getCurrent();
 
-	const Real dt = tm->getTimeStepSize();
-	const Vector3f particleBounds = m_particleGrid.getGridSize();
+// 	const Real dt = tm->getTimeStepSize();
+// 	const Vector3f particleBounds = m_particleGrid.getGridSize();
 
- 	const unsigned int nFluids = sim->numberOfFluidModels();
+//  	const unsigned int nFluids = sim->numberOfFluidModels();
 
-	for (unsigned int modelIdx = 0; modelIdx < nFluids; modelIdx++)
-	{
-		#pragma omp parallel default(shared)
- 		{
-			FluidModel *model = sim->getFluidModel(modelIdx);
-			const unsigned int* particleIndices = model->getParticleIndices();
-			const unsigned int nParticles = model->numActiveParticles();
+// 	for (unsigned int modelIdx = 0; modelIdx < nFluids; modelIdx++)
+// 	{
+// 		#pragma omp parallel default(shared)
+//  		{
+// 			FluidModel *model = sim->getFluidModel(modelIdx);
+// 			const unsigned int* particleIndices = model->getParticleIndices();
+// 			const unsigned int nParticles = model->numActiveParticles();
 
-			#pragma omp for schedule(static)
-			for (int particleNr = 0; particleNr < nParticles; particleNr++)
-			{
-				const unsigned int i = particleIndices[particleNr];
-				if (model->getParticleState(i) == ParticleState::Active)
-				{
-					const Vector3r& position = model->getPosition(i);
-					const Vector3r& velocity = model->getVelocity(i);
+// 			#pragma omp for schedule(static)
+// 			for (int particleNr = 0; particleNr < nParticles; particleNr++)
+// 			{
+// 				const unsigned int i = particleIndices[particleNr];
+// 				if (model->getParticleState(i) == ParticleState::Active)
+// 				{
+// 					const Vector3r& position = model->getPosition(i);
+// 					const Vector3r& velocity = model->getVelocity(i);
 
-					const Vector3f newPos = (position + velocity * dt).cwiseAbs();
-					if (newPos.x() > particleBounds.x() || newPos.y() > particleBounds.y() || newPos.z() > particleBounds.z())
-					{
-						printf(msg);
-						printf("Cycle Level: %d\nSubstep: %d\nCurrent Level: %d\n", m_cycleHighestLevel, m_subStepNr, m_lastCalculatedLevel);
-						printf("Particle:\nLevel: %d\nBorder Level: %d\n", m_particleGrid.getParticleLevel(modelIdx, i), m_particleGrid.getParticleBorderLevels(modelIdx)[i]);
-						printf("Time: %f\n", tm->getTime());
-						break;
-						// debugParticle(modelIdx, i);
-					}
-					// if (velocity.norm() > 20.0f)
-					// {
-					// 	debugParticle(modelIdx, i);
-					// }
-					// if (position.x() != position.x() || velocity.x() != velocity.x()) // NaN check
-					// 	debugParticle(modelIdx, i);
-					// if (std::abs(m_simulationData.getKappa(modelIdx, i)) > 10000.0f)
-					// 	debugParticle(modelIdx, i);
-					// if (m_particleGrid.isBorder(modelIdx, i) && m_particleGrid.getParticleLevel(modelIdx, i) == 0)
-					// 	debugParticle(modelIdx, i);
+// 					const Vector3f newPos = (position + velocity * dt).cwiseAbs();
 
-					// const Real factor = m_simulationData.getFactor(modelIdx, i);
-					// const Real densityAdv = m_simulationData.getDensityAdv(modelIdx, i);
-					// if (std::abs((densityAdv - 1.0f) * factor) > 1000.0f)
-					// 	debugParticle(modelIdx, i);
-				}
-			}
-		}
-	}
-}
+// 					const bool outOfBounds = newPos.x() > particleBounds.x() || newPos.y() > particleBounds.y() || newPos.z() > particleBounds.z();
+// 					const bool nan = velocity.x() != velocity.x() || position.x() != position.x();
+// 					if (outOfBounds || nan)
+// 					{
+// 						printf(msg);
+// 						printf("Cycle Level: %d\nSubstep: %d\nCurrent Level: %d\n", m_cycleHighestLevel, m_subStepNr, m_lastCalculatedLevel);
+// 						printf("Particle:\nLevel: %d\nBorder Level: %d\n", m_particleGrid.getParticleLevel(modelIdx, i), m_particleGrid.getParticleBorderLevels(modelIdx)[i]);
+// 						printf("Time: %f\n", tm->getTime());
+// 						break;
+// 						// debugParticle(modelIdx, i);
+// 					}
+// 					// if (velocity.norm() > 20.0f)
+// 					// {
+// 					// 	debugParticle(modelIdx, i);
+// 					// }
+// 					// if (position.x() != position.x() || velocity.x() != velocity.x()) // NaN check
+// 					// 	debugParticle(modelIdx, i);
+// 					// if (std::abs(m_simulationData.getKappa(modelIdx, i)) > 10000.0f)
+// 					// 	debugParticle(modelIdx, i);
+// 					// if (m_particleGrid.isBorder(modelIdx, i) && m_particleGrid.getParticleLevel(modelIdx, i) == 0)
+// 					// 	debugParticle(modelIdx, i);
+
+// 					// const Real factor = m_simulationData.getFactor(modelIdx, i);
+// 					// const Real densityAdv = m_simulationData.getDensityAdv(modelIdx, i);
+// 					// if (std::abs((densityAdv - 1.0f) * factor) > 1000.0f)
+// 					// 	debugParticle(modelIdx, i);
+// 				}
+// 			}
+// 		}
+// 	}
+// }
 
 // void TimeStepADFSPH::debugParticle(unsigned int fluidModelIndex, unsigned int i)
 // {
@@ -1368,14 +1371,15 @@ void TimeStepADFSPH::calculateLevel(unsigned int level, Real dt)
 
 	m_lastCalculatedLevel = level;
 
-	if (level == m_highestLevelToStep)
+	const bool newNeighborhoodSearch = level == m_highestLevelToStep;
+	if (newNeighborhoodSearch)
 	{
 		performNeighborhoodSearch();
 	}
 
 #ifdef USE_PERFORMANCE_OPTIMIZATION
 	START_TIMING("Precompute Values");
-	precomputeValues();
+	precomputeValues(newNeighborhoodSearch);
 	STOP_TIMING_AVG;
 #endif
 
@@ -1398,7 +1402,7 @@ void TimeStepADFSPH::calculateLevel(unsigned int level, Real dt)
 		divergenceSolve(); // Neighbor KappaV, Velocities, Advected Densities and DFSPH Factors
 		STOP_TIMING_AVG
 
-		checkParticles("Divergence\n");
+		// checkParticles("Divergence\n");
 	}
 	else
 		m_iterationsV = 0;
@@ -1450,14 +1454,16 @@ void TimeStepADFSPH::calculateLevel(unsigned int level, Real dt)
 	pressureSolve();
 	STOP_TIMING_AVG;
 
-	checkParticles("Pressure\n");
+	// checkParticles("Pressure\n");
 
 	if (m_cycleHighestLevel != 0)
 	{
+		START_TIMING("Position Correction");
 		calculateAverageAcceleration(level);
+		STOP_TIMING_AVG;
 	}
 
-	checkParticles("Position Correction\n");
+	// checkParticles("Position Correction\n");
 
 	if (m_highestLevelToStep > level)
 	{
@@ -1521,7 +1527,7 @@ void TimeStepADFSPH::interpolateBorderParticles(unsigned int level)
 
 		#pragma omp parallel default(shared)
 		{
-			constexpr const Real lowerLevelInterpFactor = 0.7f;
+			constexpr const Real lowerLevelInterpFactor = 0.70f;
 			constexpr const Real higherLevelInterpFactor = 1.0f - lowerLevelInterpFactor;
 
 			#pragma omp for schedule(static)
@@ -1697,7 +1703,7 @@ void TimeStepADFSPH::calculateAverageAcceleration(unsigned int level)
 
 		for (unsigned int l = 1; l < timestepSq.size(); l++)
 		{
-			const Real dt = dt0 * (Real)MathFunctions::power((unsigned int)LEVEL_TIMESTEP_MULTIPLIER, l);
+			const Real dt = dt0 * (Real)std::pow((unsigned int)LEVEL_TIMESTEP_MULTIPLIER, l);
 			timestepSq[l] = dt * dt;
 		}
 

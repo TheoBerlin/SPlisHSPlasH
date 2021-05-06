@@ -56,7 +56,7 @@ namespace SPH
 		virtual void loadState(BinaryFileReader &binReader) {};
 
 #ifdef USE_PERFORMANCE_OPTIMIZATION
-		void precomputeValues();
+		void precomputeValues(bool recomputeIndices = true);
 #endif
 	};
 }

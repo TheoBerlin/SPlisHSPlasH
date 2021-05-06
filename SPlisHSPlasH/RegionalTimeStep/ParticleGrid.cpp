@@ -318,9 +318,9 @@ void ParticleGrid::findCellParticlePairs()
                     GridCell &cell = fluidModelCells[cellIndex];
 					const Vector3r &particleVelocity = fluidModel->getVelocity(i);
                     const Vector3r &particleAcceleration = fluidModel->getAcceleration(i);
-                    const Real particleSpeed = (particleVelocity + particleAcceleration * timeStepSize).squaredNorm();
+                    const Real particleSpeedSquared = (particleVelocity + particleAcceleration * timeStepSize).squaredNorm();
 
-                    cell.maxSpeedSquared = std::max(particleSpeed, cell.maxSpeedSquared);
+                    cell.maxSpeedSquared = std::max(particleSpeedSquared, cell.maxSpeedSquared);
 				}
 			}
         }
@@ -385,7 +385,9 @@ void ParticleGrid::defineCellLevels()
             const Real maxTimeStepSize = Simulation::getCurrent()->getMaxTimeStepSize();
 
             // Limit what regional levels are enabled this frame, to stay within the max time step size
-            const unsigned int maxRegionalLevel = std::min<unsigned int>(REGION_LEVELS_COUNT - 1, unsigned int(std::logf(maxTimeStepSize  / timeStepSize) / logN));
+            const unsigned int maxRegionalLevel = std::min<unsigned int>(REGION_LEVELS_COUNT - 1, unsigned int(std::logf(maxTimeStepSize / timeStepSize) / logN));
+
+            const Real maxSpeed = std::sqrtf(m_maxSpeedSquared);
 
             // Use each block's max velocity to determine its level
             #pragma omp for schedule(static)
@@ -393,7 +395,7 @@ void ParticleGrid::defineCellLevels()
             {
                 GridCell &cell = fluidModelCells[cellIdx];
                 // cell.regionLevel = cellIdx % 3;
-                cell.regionLevel = unsigned int(std::logf(m_maxSpeedSquared / cell.maxSpeedSquared) / logN);
+                cell.regionLevel = unsigned int(std::logf(maxSpeed / std::sqrtf(cell.maxSpeedSquared)) / logN);
                 cell.regionLevel = std::min(cell.regionLevel, maxRegionalLevel);
             }
         }

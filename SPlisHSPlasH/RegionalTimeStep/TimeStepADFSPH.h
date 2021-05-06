@@ -37,7 +37,7 @@ namespace SPH
 		std::vector<FluidModelCopy*> m_fluidModelCopies;
 		std::vector<FluidModel*> m_originalFluidModel;
 
-		void checkParticles(const char* msg);
+		// void checkParticles(const char* msg);
 		void computeDFSPHFactor(const unsigned int fluidModelIndex);
 		void pressureSolve();
 		void pressureSolveIteration(const unsigned int fluidModelIndex, Real &avg_density_err);

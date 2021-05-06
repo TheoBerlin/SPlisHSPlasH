@@ -79,48 +79,6 @@ void SimulationDataADFSPH::copyData(const SimulationDataADFSPH* other, unsigned 
 	}
 }
 
-void SimulationDataADFSPH::copyData(SimulationDataADFSPH* other, unsigned int modelIdx, const unsigned int* particleIndices, const ParticleState* particleStates, const unsigned int* isBorder, int particleCount)
-{
-	#pragma omp parallel default(shared)
-	{
-		#pragma omp for schedule(static)
-		for (int particleNr = 0; particleNr < particleCount; particleNr++)
-		{
-			const unsigned int i = particleIndices[particleNr];
-
-			if (particleStates[i] == ParticleState::Active)
-			{
-				if (isBorder[i] == UINT32_MAX)
-				{
-					m_factor[modelIdx][i] = other->m_factor[modelIdx][i];
-					m_kappa[modelIdx][i] = other->m_kappa[modelIdx][i];
-					m_kappaV[modelIdx][i] = other->m_kappaV[modelIdx][i];
-					m_density_adv[modelIdx][i] = other->m_density_adv[modelIdx][i];
-				}
-				else
-				{
-					// Swap data with other data storage
-					Real temp = m_factor[modelIdx][i];
-					m_factor[modelIdx][i] = other->m_factor[modelIdx][i];
-					other->m_factor[modelIdx][i] = temp;
-
-					temp = m_kappa[modelIdx][i];
-					m_kappa[modelIdx][i] = other->m_kappa[modelIdx][i];
-					other->m_kappa[modelIdx][i] = temp;
-
-					temp = m_kappaV[modelIdx][i];
-					m_kappaV[modelIdx][i] = other->m_kappaV[modelIdx][i];
-					other->m_kappaV[modelIdx][i] = temp;
-
-					temp = m_density_adv[modelIdx][i];
-					m_density_adv[modelIdx][i] = other->m_density_adv[modelIdx][i];
-					other->m_density_adv[modelIdx][i] = temp;
-				}
-			}
-		}
-	}
-}
-
 void SimulationDataADFSPH::swapData(SimulationDataADFSPH* other, unsigned int modelIdx, const unsigned int* particleIndices, const ParticleState* particleStates, const unsigned int* isBorder, int particleCount)
 {
 	#pragma omp parallel default(shared)
