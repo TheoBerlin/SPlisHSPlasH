@@ -220,7 +220,7 @@ void TimeStepADFSPH::pressureSolve()
 		warmstartPressureSolve(fluidModelIndex);
 #endif
 
-	// checkParticles();
+	// checkParticles("warmstartPressureSolve\n");
 
 	//////////////////////////////////////////////////////////////////////////
 	// Compute rho_adv
@@ -269,6 +269,7 @@ void TimeStepADFSPH::pressureSolve()
 
 			avg_density_err = 0.0;
 			pressureSolveIteration(i, avg_density_err);
+			// checkParticles("pressureSolveIteration\n");
 
 			// Maximal allowed density fluctuation
 			const Real eta = m_maxError * static_cast<Real>(0.01) * density0;  // maxError is given in percent
@@ -441,6 +442,12 @@ void TimeStepADFSPH::divergenceSolve()
 // 						break;
 // 						// debugParticle(modelIdx, i);
 // 					}
+
+// 					const unsigned int particleLevel = m_particleGrid.getParticleLevel(modelIdx, i);
+// 					const bool isBorder = m_particleGrid.isBorder(modelIdx, i);
+// 					if (particleLevel == 0 && isBorder)
+// 						debugParticle(modelIdx, i);
+
 // 					// if (velocity.norm() > 20.0f)
 // 					// {
 // 					// 	debugParticle(modelIdx, i);
@@ -469,6 +476,7 @@ void TimeStepADFSPH::divergenceSolve()
 // 	FluidModel* model = sim->getFluidModel(fluidModelIndex);
 
 // 	const bool isBorderParticle = m_particleGrid.isBorder(fluidModelIndex, i);
+// 	const unsigned int borderLevel = m_particleGrid.getParticleBorderLevels(fluidModelIndex)[i];
 // 	const unsigned int particleLevel = m_particleGrid.getParticleLevel(fluidModelIndex, i);
 // 	const Real kappa = m_simulationData.getKappa(fluidModelIndex, i);
 // 	const Real factor = m_simulationData.getFactor(fluidModelIndex, i);
@@ -490,8 +498,11 @@ void TimeStepADFSPH::divergenceSolve()
 // 	const Vector3r& xi = model->getPosition(i);
 
 // 	Real maxNeighborDist = 0.0f;
+// 	Real minNeighborDist = 999999.0f;
 // 	forall_fluid_neighbors(
-// 		maxNeighborDist = std::max(maxNeighborDist, (xi - xj).norm());
+// 		const Real neighborDist = (xi - xj).norm();
+// 		maxNeighborDist = std::max(maxNeighborDist, neighborDist);
+// 		minNeighborDist = std::min(minNeighborDist, neighborDist);
 
 // 		neighbors.push_back(
 // 			Neighbor({
@@ -890,6 +901,13 @@ void TimeStepADFSPH::pressureSolveIteration(const unsigned int fluidModelIndex, 
 				delta_vi += V_gradW * (h_avx * kSum_avx);			// ki, kj already contain inverse density
 			);
 
+			// Real vel_x = delta_vi.x().reduce();
+			// if (vel_x != vel_x || std::abs(vel_x) > 10000.0f)
+			// {
+			// 	checkParticles("iteration0\n");
+			// 	debugParticle(fluidModelIndex, i);
+			// }
+
 			//////////////////////////////////////////////////////////////////////////
 			// Boundary
 			//////////////////////////////////////////////////////////////////////////
@@ -909,6 +927,10 @@ void TimeStepADFSPH::pressureSolveIteration(const unsigned int fluidModelIndex, 
 					);
 				}
 			}
+
+			// vel_x = delta_vi.x().reduce();
+			// if (vel_x != vel_x || std::abs(vel_x) > 10000.0f)
+			// 	checkParticles("iteration1\n");
 
 			vi[0] += delta_vi.x().reduce();
 			vi[1] += delta_vi.y().reduce();
@@ -933,6 +955,9 @@ void TimeStepADFSPH::pressureSolveIteration(const unsigned int fluidModelIndex, 
 					);
 				}
 			}
+
+			// if (vi.x() != vi.x() || std::abs(vel_x) > 10000.0f)
+			// 	checkParticles("pressureBoundary\n");
 		}
 
 		//////////////////////////////////////////////////////////////////////////

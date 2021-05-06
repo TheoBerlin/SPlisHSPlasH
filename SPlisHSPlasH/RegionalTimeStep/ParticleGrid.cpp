@@ -298,30 +298,27 @@ void ParticleGrid::findCellParticlePairs()
 			#pragma omp for schedule(static)
 			for (int i = 0; i < numParticles; i++)
 			{
-				if (fluidModel->getParticleState(i) == ParticleState::Active)
-				{
-                    // Place the particle in a cell
-                    const Vector3r &particlePosition = fluidModel->getPosition(i);
+                // Place the particle in a cell
+                const Vector3r &particlePosition = fluidModel->getPosition(i);
 
-                    // The grid size is added to the particle's position to avoid negaive numbers
-                    const Vector3i indices = (particlePosition + m_gridSize).cwiseProduct(gridDoubleSizeReciprocal).cwiseProduct(gridResReal).cast<int>();
+                // The grid size is added to the particle's position to avoid negaive numbers
+                const Vector3i indices = (particlePosition + m_gridSize).cwiseProduct(gridDoubleSizeReciprocal).cwiseProduct(gridResReal).cast<int>();
 
-                    const unsigned int cellIndex =
-                        indices.x() +
-                        indices.y() * m_resolution.x() +
-                        indices.z() * m_resolution.x() * m_resolution.y();
+                const unsigned int cellIndex =
+                    indices.x() +
+                    indices.y() * m_resolution.x() +
+                    indices.z() * m_resolution.x() * m_resolution.y();
 
-                    cellParticleIndices[i] = { cellIndex, (unsigned int)i };
+                cellParticleIndices[i] = { cellIndex, (unsigned int)i };
 
-                    // Update cell's max speed
-                    // TODO: Move this, data race!
-                    GridCell &cell = fluidModelCells[cellIndex];
-					const Vector3r &particleVelocity = fluidModel->getVelocity(i);
-                    const Vector3r &particleAcceleration = fluidModel->getAcceleration(i);
-                    const Real particleSpeedSquared = (particleVelocity + particleAcceleration * timeStepSize).squaredNorm();
+                // Update cell's max speed
+                // TODO: Move this, data race!
+                GridCell &cell = fluidModelCells[cellIndex];
+                const Vector3r &particleVelocity = fluidModel->getVelocity(i);
+                const Vector3r &particleAcceleration = fluidModel->getAcceleration(i);
+                const Real particleSpeedSquared = (particleVelocity + particleAcceleration * timeStepSize).squaredNorm();
 
-                    cell.maxSpeedSquared = std::max(particleSpeedSquared, cell.maxSpeedSquared);
-				}
+                cell.maxSpeedSquared = std::max(particleSpeedSquared, cell.maxSpeedSquared);
 			}
         }
     }
@@ -412,8 +409,8 @@ void ParticleGrid::defineParticleLevels()
         #pragma omp parallel default(shared)
         {
             std::vector<unsigned int> &particleLevels = m_particleLevels[modelIdx];
-            std::vector<GridCell> &gridCells = m_cells[modelIdx];
-            std::vector<CellParticlePair> &cellParticlePairs = m_cellParticlePairs[modelIdx];
+            const std::vector<GridCell> &gridCells = m_cells[modelIdx];
+            const std::vector<CellParticlePair> &cellParticlePairs = m_cellParticlePairs[modelIdx];
 
             const int cellCount = (int)gridCells.size();
 
@@ -454,7 +451,7 @@ void ParticleGrid::identifyRegionBorders()
         {
             std::vector<unsigned int> &cellBorderLevels = m_cellBorderLevels[modelIdx];
             std::vector<GridCell> &gridCells = m_cells[modelIdx];
-            const int cellCount = (int)cellBorderLevels.size();
+            const int cellCount = (int)gridCells.size();
             const int zStep = m_resolution.x() * m_resolution.y();
 
             #pragma omp for schedule(static)
@@ -507,7 +504,7 @@ void ParticleGrid::identifyRegionBorders()
                     const unsigned int pairIdxEnd = cell.pairIndexEnd;
 
                     std::vector<unsigned int>& particleBorderLevels = m_particleBorderLevels[modelIdx];
-                    std::vector<CellParticlePair>& cellParticlePairs = m_cellParticlePairs[modelIdx];
+                    const std::vector<CellParticlePair>& cellParticlePairs = m_cellParticlePairs[modelIdx];
 
                     while (pairIdx < pairIdxEnd)
                     {
@@ -530,9 +527,9 @@ void ParticleGrid::writeBorderIndices()
         std::vector<unsigned int>& borderParticleIndices = m_borderParticleIndices[modelIdx];
         borderParticleIndices.clear();
 
-        std::vector<unsigned int> &borderLevels = m_cellBorderLevels[modelIdx];
-        std::vector<GridCell> &gridCells = m_cells[modelIdx];
-        std::vector<CellParticlePair>& cellParticlePairs = m_cellParticlePairs[modelIdx];
+        const std::vector<unsigned int> &borderLevels = m_cellBorderLevels[modelIdx];
+        const std::vector<GridCell> &gridCells = m_cells[modelIdx];
+        const std::vector<CellParticlePair>& cellParticlePairs = m_cellParticlePairs[modelIdx];
 
         const unsigned int cellCount = borderLevels.size();
 
