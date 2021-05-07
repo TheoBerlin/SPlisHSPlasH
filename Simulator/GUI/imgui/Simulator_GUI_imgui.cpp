@@ -322,12 +322,12 @@ void Simulator_GUI_imgui::render()
 	MiniGL::coordinateSystem();
 
 	Simulation *sim = Simulation::getCurrent();
+	SimulatorBase *base = getSimulatorBase();
 	for (unsigned int i = 0; i < sim->numberOfFluidModels(); i++)
 	{
 		float fluidColor[4] = { 0.3f, 0.5f, 0.9f, 1.0f };
 		MiniGL::hsvToRgb(0.61f - 0.1f*i, 0.66f, 0.9f, fluidColor);
 		FluidModel *model = sim->getFluidModel(i);
-		SimulatorBase *base = getSimulatorBase();
 
 		const FieldDescription* field = nullptr;
 		field = &model->getField(base->getColorField(i));
@@ -340,6 +340,19 @@ void Simulator_GUI_imgui::render()
 		Simulator_OpenGL::renderSelectedParticles(model, getSelectedParticles(), base->getColorMapType(i),
 			base->getRenderMinValue(i), base->getRenderMaxValue(i));
 	}
+
+	if (base->getSaveCurrentFrame())
+	{
+		TimeManager* tm = TimeManager::getCurrent();
+
+		// Save frame to file
+		const std::string methodStr = sim->getSimulationMethod() == Simulation::ENUM_SIMULATION_DFSPH ? "DFSPH" : "ADFSPH";
+		const std::string imageName = std::to_string(unsigned int(tm->getTime() * 1000));
+
+		const std::string imagePath = "StateLog/" + methodStr + "/" + imageName + ".jpeg";
+		Simulator_OpenGL::saveFrameToFile(imagePath.c_str());
+	}
+
 	renderBoundary();
 	update();
 }

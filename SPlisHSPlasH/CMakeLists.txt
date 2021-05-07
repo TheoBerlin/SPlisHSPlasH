@@ -265,6 +265,9 @@ add_library(SPlisHSPlasH
 
 	${REGIONAL_TIME_STEP_HEADER_FILES}
 	${REGIONAL_TIME_STEP_SOURCE_FILES}
+
+	${PROJECT_SOURCE_DIR}/extern/toojpeg/toojpeg.cpp
+	${PROJECT_SOURCE_DIR}/extern/toojpeg/toojpeg.h
 )
 
 add_dependencies(SPlisHSPlasH

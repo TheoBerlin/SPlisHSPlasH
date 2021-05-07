@@ -21,6 +21,8 @@ namespace SPH
 		static Shader m_meshShader;
 		static GLuint m_textureMap;
 
+		static FILE* m_imageFile;
+
 	public:
 		Simulator_OpenGL() = default;
 		virtual ~Simulator_OpenGL() = default;
@@ -43,6 +45,11 @@ namespace SPH
 			const Real renderMinValue, const Real renderMaxValue);
 		static void renderBoundary(BoundaryModel *model, const float *col);
 		static void renderBoundaryParticles(BoundaryModel_Akinci2012 *model, const float *col);
+
+		static void saveFrameToFile(const char* filePath);
+
+	protected:
+		static void outputImageByte(unsigned char byte);
 	};
 }
 

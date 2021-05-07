@@ -22,3 +22,4 @@ lib/
 Cache/
 imgui.ini
 Version.h
+Simulator/StateLog/

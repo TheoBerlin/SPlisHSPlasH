@@ -12,13 +12,13 @@ using namespace Utilities;
 
 Simulator_GUI_TweakBar::Simulator_GUI_TweakBar(SimulatorBase *base) :
 	Simulator_GUI_Base(base)
-{	
+{
 	m_tweakBar = nullptr;
 	m_currentFluidModel = 0;
 }
 
 Simulator_GUI_TweakBar::~Simulator_GUI_TweakBar(void)
-{	
+{
 }
 
 void Simulator_GUI_TweakBar::init(int argc, char **argv, const char *name)
@@ -37,7 +37,7 @@ void Simulator_GUI_TweakBar::init(int argc, char **argv, const char *name)
 	MiniGL::addKeyFunc('s', std::bind(&SimulatorBase::saveState, m_simulatorBase));
 #ifdef WIN32
 	MiniGL::addKeyFunc('l', std::bind(&SimulatorBase::loadStateDialog, m_simulatorBase));
-#endif 
+#endif
 
 	if (MiniGL::checkOpenGLVersion(3, 3))
 		Simulator_OpenGL::initShaders(m_simulatorBase->getExePath() + "/resources/shaders");
@@ -48,7 +48,7 @@ void Simulator_GUI_TweakBar::init(int argc, char **argv, const char *name)
 	// Initialize AntTweakBar
 	if (!TwInit(TW_OPENGL, NULL))
 	{
-		// A fatal error occured    
+		// A fatal error occured
 		fprintf(stderr, "AntTweakBar initialization failed: %s\n", TwGetLastError());
 		exit(1);
 	}

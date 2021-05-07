@@ -1,4 +1,6 @@
 #include "SimulatorBase.h"
+
+#include "extern/json/json.hpp"
 #include "SPlisHSPlasH/Utilities/SceneLoader.h"
 #include "SceneConfiguration.h"
 #include "Utilities/FileSystem.h"
@@ -43,6 +45,7 @@ int SimulatorBase::DATA_EXPORT_FPS = -1;
 int SimulatorBase::PARTICLE_EXPORT_ATTRIBUTES = -1;
 int SimulatorBase::STATE_EXPORT = -1;
 int SimulatorBase::STATE_EXPORT_FPS = -1;
+int SimulatorBase::STATE_EXPORT_FRAMES = -1;
 int SimulatorBase::RENDER_WALLS = -1;
 int SimulatorBase::ENUM_WALLS_NONE = -1;
 int SimulatorBase::ENUM_WALLS_PARTICLES_ALL = -1;
@@ -50,7 +53,7 @@ int SimulatorBase::ENUM_WALLS_PARTICLES_NO_WALLS = -1;
 int SimulatorBase::ENUM_WALLS_GEOMETRY_ALL = -1;
 int SimulatorBase::ENUM_WALLS_GEOMETRY_NO_WALLS = -1;
 
- 
+
 SimulatorBase::SimulatorBase()
 {
 	Utilities::logger.addSink(unique_ptr<Utilities::ConsoleSink>(new Utilities::ConsoleSink(Utilities::LogLevel::INFO)));
@@ -68,6 +71,7 @@ SimulatorBase::SimulatorBase()
 	m_enableRigidBodyVTKExport = false;
 	m_enableRigidBodyExport = false;
 	m_enableStateExport = false;
+	m_enableStateImageExport = false;
 	m_framesPerSecond = 25;
 	m_framesPerSecondState = 1;
 	m_nextFrameTime = 0.0;
@@ -75,6 +79,7 @@ SimulatorBase::SimulatorBase()
 	m_frameCounter = 1;
 	m_isFirstFrame = true;
 	m_isFirstFrameVTK = true;
+	m_saveCurrentFrame = false;
 	m_firstState = true;
 	m_colorField.resize(1, "velocity");
 	m_colorMapType.resize(1, 0);
@@ -148,9 +153,13 @@ void SimulatorBase::initParameters()
 	setGroup(PARTICLE_EXPORT_ATTRIBUTES, "Export");
 	setDescription(PARTICLE_EXPORT_ATTRIBUTES, "Attributes that are exported in the partio files (except id and position).");
 
+	STATE_EXPORT_FRAMES = createBoolParameter("stateExportImages", "State export Frames", &m_enableStateImageExport);
+	setGroup(STATE_EXPORT_FRAMES, "Export");
+	setDescription(STATE_EXPORT_FRAMES, "Save frames as images and save timings in StateLog folder.");
+
 	for (size_t i = 0; i < m_particleExporters.size(); i++)
 	{
-		m_particleExporters[i].m_id = createBoolParameter(m_particleExporters[i].m_key, m_particleExporters[i].m_name, 
+		m_particleExporters[i].m_id = createBoolParameter(m_particleExporters[i].m_key, m_particleExporters[i].m_name,
 			[i,this]() -> bool { return m_particleExporters[i].m_exporter->getActive(); },
 			[i,this](bool active) { m_particleExporters[i].m_exporter->setActive(active); });
 		setGroup(m_particleExporters[i].m_id, "Export");
@@ -214,7 +223,7 @@ void SimulatorBase::init(int argc, char **argv, const std::string &windowName)
 			("no-initial-pause", "Disable initial pause when starting the simulation.")
 			("no-gui", "Disable GUI.")
 			("stopAt", "Sets or overwrites the stopAt parameter of the scene.", cxxopts::value<Real>())
-			("param", "Sets or overwrites a parameter of the scene.\n\n" 
+			("param", "Sets or overwrites a parameter of the scene.\n\n"
 					  "- Setting a fluid parameter:\n\t<fluid-id>:<parameter-name>:<value>\n"
 					  "- Example: --param Fluid:viscosity:0.01\n\n"
 					  "- Setting a configuration parameter:\n\t<parameter-name>:<value>\n"
@@ -417,7 +426,7 @@ void SimulatorBase::initSimulation()
 	std::string progFilePath = FileSystem::normalizePath(m_outputPath + "/program");
 	FileSystem::makeDirs(progFilePath);
 	FileSystem::copyFile(m_argv[0], progFilePath + "/" + FileSystem::getFileNameWithExt(m_argv[0]));
-	#endif
+#endif
 
 	Simulation *sim = Simulation::getCurrent();
 	sim->init(scene.particleRadius, scene.sim2D);
@@ -457,10 +466,10 @@ void SimulatorBase::initSimulation()
 		}
 
 		m_gui->initSimulationParameterGUI();
-		Simulation::getCurrent()->setSimulationMethodChangedCallback([this]() { 
-			reset(); 
-			m_gui->initSimulationParameterGUI(); 
-			getSceneLoader()->readParameterObject("Configuration", Simulation::getCurrent()->getTimeStep()); 
+		Simulation::getCurrent()->setSimulationMethodChangedCallback([this]() {
+			reset();
+			m_gui->initSimulationParameterGUI();
+			getSceneLoader()->readParameterObject("Configuration", Simulation::getCurrent()->getTimeStep());
 #ifdef USE_DEBUG_TOOLS
 			getSceneLoader()->readParameterObject("Configuration", Simulation::getCurrent()->getDebugTools());
 #endif
@@ -469,6 +478,8 @@ void SimulatorBase::initSimulation()
 	readParameters();
 	setCommandLineParameter();
 	updateScalarField();
+
+	initTimingsFile();
 }
 
 void SimulatorBase::runSimulation()
@@ -553,14 +564,14 @@ void SimulatorBase::setCommandLineParameter()
 #ifdef USE_DEBUG_TOOLS
 	setCommandLineParameter((ParameterObject*)sim->getDebugTools());
 #endif
-	
+
 	for (unsigned int i = 0; i < sim->numberOfFluidModels(); i++)
 	{
 		FluidModel *model = sim->getFluidModel(i);
 		const std::string &key = model->getId();
-		
+
 		if (m_paramTokens[0] == key)
-		{			
+		{
 			setCommandLineParameter((ParameterObject*)model);
  			setCommandLineParameter((ParameterObject*)model->getDragBase());
  			setCommandLineParameter((ParameterObject*)model->getSurfaceTensionBase());
@@ -667,6 +678,82 @@ void SimulatorBase::initExporters()
 		m_rbExporters[i].m_exporter->init(m_outputPath);
 }
 
+void SimulatorBase::getTimingsFilePath(std::string& path)
+{
+	const int simMethod = Simulation::getCurrent()->getSimulationMethod();
+	const std::string methodStr = simMethod == Simulation::ENUM_SIMULATION_DFSPH ? "DFSPH" : "ADFSPH";
+	path = "StateLog/" + methodStr + "/timings.json";
+}
+
+void SimulatorBase::initTimingsFile()
+{
+	Simulation* sim = Simulation::getCurrent();
+	const int simMethod = sim->getSimulationMethod();
+	if (simMethod != Simulation::ENUM_SIMULATION_DFSPH && simMethod != Simulation::ENUM_SIMULATION_ADFSPH)
+	{
+		return;
+	}
+
+	// Initialize empty timings log file
+	std::string filePath;
+	getTimingsFilePath(filePath);
+	std::ofstream timingsFile(filePath, std::ios::trunc);
+
+	nlohmann::json timingsJSON;
+	timingsFile << std::setw(4) << timingsJSON << std::endl;
+	timingsFile.close();
+}
+
+void SimulatorBase::updateTimingsFile()
+{
+	Simulation* sim = Simulation::getCurrent();
+	const int simMethod = sim->getSimulationMethod();
+	if (simMethod != Simulation::ENUM_SIMULATION_DFSPH && simMethod != Simulation::ENUM_SIMULATION_ADFSPH)
+	{
+		return;
+	}
+
+	// Stores the current timings
+	nlohmann::json currentTimings;
+	nlohmann::json sumTimings;
+	nlohmann::json avgTimings;
+
+	const std::unordered_map<int, AverageTime>& avgTimes = Utilities::Timing::m_averageTimes;
+	// Write total times
+	for (const std::pair<int, AverageTime>& avgTimePair : avgTimes)
+	{
+		const AverageTime& avgTime = avgTimePair.second;
+		sumTimings[avgTime.name.c_str()] = avgTime.totalTime;
+	}
+
+	// Write average times
+	for (const std::pair<int, AverageTime>& avgTimePair : avgTimes)
+	{
+		const AverageTime& avgTime = avgTimePair.second;
+		avgTimings[avgTime.name.c_str()] = avgTime.totalTime / avgTime.counter;
+	}
+
+	currentTimings["Sums"] = sumTimings;
+	currentTimings["Averages"] = avgTimings;
+
+	// Read the current JSON document from file, append to it, then save it to file again
+	std::string filePath;
+	getTimingsFilePath(filePath);
+	std::ifstream inFile(filePath);
+
+	nlohmann::json timingsJSON;
+	inFile >> timingsJSON;
+	inFile.close();
+
+	TimeManager* tm = TimeManager::getCurrent();
+	const std::string timeStr = std::to_string(unsigned int(tm->getTime() * 1000.0f));
+
+	timingsJSON[timeStr] = currentTimings;
+
+	std::ofstream outFile(filePath);
+	outFile << std::setw(4) << timingsJSON << std::endl;
+	outFile.close();
+}
 
 void SimulatorBase::buildModel()
 {
@@ -780,6 +867,25 @@ void SimulatorBase::timeStep()
 
 		if (m_timeStepCB)
 			m_timeStepCB();
+	}
+
+	if (m_enableStateImageExport)
+	{
+		// How many frames a second to save frames to file
+		constexpr const Real saveFrameFrequency = 10.0f;
+		TimeManager* tm = TimeManager::getCurrent();
+
+		const unsigned currentTime = unsigned int(tm->getTime() * saveFrameFrequency);
+		const unsigned previousTime = unsigned int((tm->getTime() - tm->getTimeStepSize() * m_numberOfStepsPerRenderUpdate) * saveFrameFrequency);
+
+		m_saveCurrentFrame = false;
+
+		if (currentTime > previousTime)
+		{
+			m_saveCurrentFrame = true;
+
+			updateTimingsFile();
+		}
 	}
 
 	updateScalarField();
@@ -1150,7 +1256,7 @@ void SimulatorBase::createEmitters()
 			else if (ed->type == 1)
 				emitterBoundary->meshFile = FileSystem::normalizePath(getExePath() + "/resources/emitter_boundary/EmitterCylinder.obj");
 			scene.boundaryModels.push_back(emitterBoundary);
-			
+
 			// reuse particles if they are outside of a bounding box
 			bool emitterReuseParticles = false;
 			Vector3r emitterBoxMin(-1.0, -1.0, -1.0);
@@ -1187,9 +1293,9 @@ void SimulatorBase::createAnimationFields()
 		SceneLoader::AnimationFieldData *data = scene.animatedFields[i];
 
 		sim->getAnimationFieldSystem()->addAnimationField(
-				data->particleFieldName, 
+				data->particleFieldName,
 				data->x, data->rotation, data->scale,
-				data->expression, 
+				data->expression,
 				data->shapeType);
 
 		AnimationField *field = sim->getAnimationFieldSystem()->getAnimationFields().back();
@@ -1384,7 +1490,7 @@ void SimulatorBase::updateBoundaryParticles(const bool forceUpdate = false)
 		{
 			#pragma omp parallel default(shared)
 			{
-				#pragma omp for schedule(static)  
+				#pragma omp for schedule(static)
 				for (int j = 0; j < (int)bm->numberOfParticles(); j++)
 				{
 					bm->getPosition(j) = rbo->getRotation() * bm->getPosition0(j) + rbo->getPosition();
@@ -1398,7 +1504,7 @@ void SimulatorBase::updateBoundaryParticles(const bool forceUpdate = false)
 			// copy the particle data to the GPU
 			if (forceUpdate)
 				sim->getNeighborhoodSearch()->update_point_sets();
-			#endif 
+			#endif
 		}
 	}
 }
@@ -1453,7 +1559,7 @@ std::string SimulatorBase::real2String(const Real r)
 
 void SPH::SimulatorBase::saveState(const std::string& stateFile)
 {
-	std::string stateFilePath; 
+	std::string stateFilePath;
 	std::string exportFileName;
 	const Real time = TimeManager::getCurrent()->getTime();
 	const std::string timeStr = real2String(time);
@@ -1484,7 +1590,7 @@ void SPH::SimulatorBase::saveState(const std::string& stateFile)
 	binWriter.write(m_frameCounter);
 	binWriter.write(m_isFirstFrame);
 	binWriter.write(m_isFirstFrameVTK);
-	
+
 	writeParameterState(binWriter);
 	TimeManager::getCurrent()->saveState(binWriter);
 	Simulation::getCurrent()->saveState(binWriter);
@@ -1543,7 +1649,7 @@ void SPH::SimulatorBase::loadStateDialog()
 		return;
 	loadState(stateFileName);
 }
-#endif 
+#endif
 
 void SPH::SimulatorBase::loadState(const std::string &stateFile)
 {
@@ -1621,7 +1727,7 @@ void SPH::SimulatorBase::loadState(const std::string &stateFile)
 			bm->getRigidBodyObject()->setAngularVelocity(v);
 
 			dynamic = true;
-		}		
+		}
 	}
 	if (dynamic)
 	{
@@ -1712,7 +1818,7 @@ void SimulatorBase::readParameterState(BinaryFileReader &binReader)
 	readParameterObjectState(binReader, Simulation::getCurrent()->getDebugTools());
 #endif
 
- 
+
  	Simulation *sim = Simulation::getCurrent();
  	for (unsigned int i = 0; i < sim->numberOfFluidModels(); i++)
  	{
@@ -1723,7 +1829,7 @@ void SimulatorBase::readParameterState(BinaryFileReader &binReader)
  		readParameterObjectState(binReader, (ParameterObject*)model->getViscosityBase());
  		readParameterObjectState(binReader, (ParameterObject*)model->getVorticityBase());
  		readParameterObjectState(binReader, (ParameterObject*)model->getElasticityBase());
- 
+
 		std::string field;
 		binReader.read(field);
 		setColorField(model->getPointSetIndex(), field);
@@ -1921,11 +2027,11 @@ void SimulatorBase::readFluidParticlesState(const std::string &fileName, FluidMo
 	{
 		const unsigned int fieldIndex = partioAttr[j].first;
 		const Partio::ParticleAttribute &attr = partioAttr[j].second;
- 
+
 		const FieldDescription &field = model->getField(fieldIndex);
 
 		for (int i = 0; i < data->numParticles(); i++)
-		{			
+		{
 			if (field.type == FieldType::Scalar)
 			{
 				const float *value = data->data<float>(attr, i);
@@ -2117,7 +2223,7 @@ void SimulatorBase::initDensityMap(std::vector<Vector3r> &x, std::vector<unsigne
 	string densityMapFileName = "";
 	if (isDynamic)
 		densityMapFileName = FileSystem::normalizePath(cachePath + "/" + mesh_file_name + "_db_dm_" + real2String(scene.particleRadius) + "_" + scaleStr + "_" + resStr + "_" + invertStr + "_" + thicknessStr + "_" + kernelStr + ".cdm");
-	else 
+	else
 		densityMapFileName = FileSystem::normalizePath(cachePath + "/" + mesh_file_name + "_sb_dm_" + real2String(scene.particleRadius) + "_" + scaleStr + "_" + resStr + "_" + invertStr + "_" + thicknessStr + "_" + kernelStr + ".cdm");
 
 	// check MD5 if cache file is available
@@ -2216,7 +2322,7 @@ void SimulatorBase::initDensityMap(std::vector<Vector3r> &x, std::vector<unsigne
 				res = 0.8 * SimpleQuadrature::integrate(integrand);
 			else
 				res = 0.8 * GaussQuadrature::integrate(integrand, int_domain, 50);
-			
+
 			return res;
 		};
 
@@ -2306,7 +2412,7 @@ void SimulatorBase::initVolumeMap(std::vector<Vector3r> &x, std::vector<unsigned
 	string volumeMapFileName = "";
 	if (isDynamic)
 		volumeMapFileName = FileSystem::normalizePath(cachePath + "/" + mesh_file_name + "_db_vm_" + real2String(scene.particleRadius) + "_" + scaleStr + "_" + resStr + "_" + invertStr + "_" + thicknessStr + ".cdm");
-	else 
+	else
 		volumeMapFileName = FileSystem::normalizePath(cachePath + "/" + mesh_file_name + "_sb_vm_" + real2String(scene.particleRadius) + "_" + scaleStr + "_" + resStr + "_" + invertStr + "_" + thicknessStr + ".cdm");
 
 	// check MD5 if cache file is available
@@ -2447,7 +2553,7 @@ void SimulatorBase::initVolumeMap(std::vector<Vector3r> &x, std::vector<unsigned
 			volumeMap->reduceField(1u, [&](const Eigen::Vector3d &, double v)->double
 			{
 				if (v == std::numeric_limits<double>::max())
-					return false;				
+					return false;
 				return true;
 			});
 			std::cout << "DONE" << std::endl;

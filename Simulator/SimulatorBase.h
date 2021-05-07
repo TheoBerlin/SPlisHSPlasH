@@ -19,7 +19,7 @@ namespace SPH
 
 	class SimulatorBase : public GenParam::ParameterObject
 	{
-	public: 
+	public:
 		struct SimulationMethod
 		{
 			short simulationMethod = 0;
@@ -51,6 +51,7 @@ namespace SPH
 		bool m_enableRigidBodyVTKExport;
 		bool m_enableRigidBodyExport;
 		bool m_enableStateExport;
+		bool m_enableStateImageExport;
 		Real m_framesPerSecond;
 		Real m_framesPerSecondState;
 		std::string m_particleAttributes;
@@ -61,6 +62,7 @@ namespace SPH
 		unsigned int m_frameCounter;
 		bool m_isFirstFrame;
 		bool m_isFirstFrameVTK;
+		bool m_saveCurrentFrame;
 		std::vector<std::string> m_colorField;
 		std::vector<int> m_colorMapType;
 		std::vector<Real> m_renderMaxValue;
@@ -96,6 +98,10 @@ namespace SPH
 		void cleanupExporters();
 		void initExporters();
 
+		void getTimingsFilePath(std::string& path);
+		void initTimingsFile();
+		void updateTimingsFile();
+
 	public:
 		static int PAUSE;
 		static int PAUSE_AT;
@@ -105,8 +111,9 @@ namespace SPH
 		static int PARTICLE_EXPORT_ATTRIBUTES;
 		static int STATE_EXPORT;
 		static int STATE_EXPORT_FPS;
+		static int STATE_EXPORT_FRAMES;
 		static int RENDER_WALLS;
-		
+
 		static int ENUM_WALLS_NONE;
 		static int ENUM_WALLS_PARTICLES_ALL;
 		static int ENUM_WALLS_PARTICLES_NO_WALLS;
@@ -172,6 +179,8 @@ namespace SPH
 		bool getUseGUI() const { return m_useGUI; }
 		void setUseGUI(bool val) { m_useGUI = val; }
 
+		FORCE_INLINE bool getSaveCurrentFrame() const { return m_saveCurrentFrame; }
+
 		const std::string& getColorField(const unsigned int fluidModelIndex) {	return m_colorField[fluidModelIndex]; }
 		void setColorField(const unsigned int fluidModelIndex, const std::string& fieldName) { m_colorField[fluidModelIndex] = fieldName; }
 
@@ -201,5 +210,5 @@ namespace SPH
 		void activateExporter(const std::string& exporterName, const bool active);
 	};
 }
- 
+
 #endif

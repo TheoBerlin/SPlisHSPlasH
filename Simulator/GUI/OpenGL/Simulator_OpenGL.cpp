@@ -1,5 +1,6 @@
 #include "Simulator_OpenGL.h"
 
+#include "extern/toojpeg/toojpeg.h"
 #include "GUI/OpenGL/MiniGL.h"
 #include "GUI/OpenGL/colormaps/colormap_jet.h"
 #include "GUI/OpenGL/colormaps/colormap_plasma.h"
@@ -21,6 +22,7 @@ Shader Simulator_OpenGL::m_shader_regions;
 Shader Simulator_OpenGL::m_shader_vector;
 Shader Simulator_OpenGL::m_meshShader;
 GLuint Simulator_OpenGL::m_textureMap = 0;
+FILE* Simulator_OpenGL::m_imageFile = 0;
 
 void Simulator_OpenGL::initShaders(const std::string &shaderPath)
 {
@@ -407,4 +409,45 @@ void Simulator_OpenGL::renderBoundary(BoundaryModel *model, const float *col)
 	MiniGL::drawMesh(vertices, faces, vNormals, col);
 
 	m_meshShader.end();
+}
+
+void Simulator_OpenGL::saveFrameToFile(const char* filePath)
+{
+	const unsigned int width = (unsigned int)MiniGL::getWidth();
+	const unsigned int height = (unsigned int)MiniGL::getHeight();
+
+	GLsizei nrChannels = 3;
+	GLsizei stride = nrChannels * width;
+	stride += (stride % 4) ? (4 - stride % 4) : 0;
+	GLsizei bufferSize = stride * height;
+	std::vector<char> buffer(bufferSize);
+	glPixelStorei(GL_PACK_ALIGNMENT, 4);
+	glReadBuffer(GL_FRONT);
+	glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, buffer.data());
+
+	// Flip the image
+	char* imageData = buffer.data();
+	unsigned char tmp[3];
+
+	for (int x = 0; x < width; x++)
+	{
+		for (int y = 0; y < height / 2; y++)
+		{
+			int top = (x + y * width) * 3;
+			int bottom = (x + (height - y - 1) * width) * 3;
+
+			memcpy(tmp, imageData + top, sizeof(tmp));
+			memcpy(imageData + top, imageData + bottom, sizeof(tmp));
+			memcpy(imageData + bottom, tmp, sizeof(tmp));
+		}
+	}
+
+	m_imageFile = fopen(filePath, "wb");
+	TooJpeg::writeJpeg(outputImageByte, buffer.data(), width, height);
+	fclose(m_imageFile);
+}
+
+void Simulator_OpenGL::outputImageByte(unsigned char byte)
+{
+	fputc(byte, m_imageFile);
 }

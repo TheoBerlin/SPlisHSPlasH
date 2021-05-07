@@ -55,11 +55,11 @@ namespace SPH
 		static FILE *m_jpegFile;
 		bool m_doPause;
 		std::vector<Fluid> m_fluids;
-		std::vector<Boundary> m_boundaries;		
-		std::string m_exePath, m_outPath;		
+		std::vector<Boundary> m_boundaries;
+		std::string m_exePath, m_outPath;
 		bool m_usePlane;
 		bool m_useRBData;
-		Eigen::AlignedBox3f m_fluidBoundingBox;	
+		Eigen::AlignedBox3f m_fluidBoundingBox;
 		std::vector<unsigned char> m_image;
 		PartioViewer_GUI_Base *m_gui;
 		int m_argc;
@@ -99,7 +99,7 @@ namespace SPH
 		void generateSequence();
 		void generateVideo();
 		void timeStep();
-		
+
 		int getFrameIndex() const { return m_frameIndex; }
 		bool getUsePlane() const { return m_usePlane; }
 		void setUsePlane(bool val);
