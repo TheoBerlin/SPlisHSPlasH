@@ -7,8 +7,9 @@
 #include <vector>
 
 #define REGION_LEVELS_COUNT 3
-// Equivalent to the 'N' variable in Koike et al.
+// Equivalent to the 'N' variable in Koike et al. Except, defining regional levels is done using the multiplier below.
 #define LEVEL_TIMESTEP_MULTIPLIER 2
+#define REGION_SPEED_MULTIPLIER 1.41421356f
 
 namespace SPH
 {

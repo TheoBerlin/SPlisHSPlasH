@@ -377,7 +377,7 @@ void ParticleGrid::defineCellLevels()
     {
         #pragma omp parallel default(shared)
         {
-            const Real logN = std::logf(LEVEL_TIMESTEP_MULTIPLIER);
+            const Real logN = std::logf(REGION_SPEED_MULTIPLIER);
             const Real timeStepSize = TimeManager::getCurrent()->getTimeStepSize();
             const Real maxTimeStepSize = Simulation::getCurrent()->getMaxTimeStepSize();
 
