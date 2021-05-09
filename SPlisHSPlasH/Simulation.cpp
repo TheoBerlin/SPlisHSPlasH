@@ -590,6 +590,13 @@ void Simulation::performNeighborhoodSearch()
 	STOP_TIMING_AVG;
 }
 
+void Simulation::performNeighborhoodSearch(unsigned int modelIdx, const unsigned int* particleIndices, unsigned int particleCount)
+{
+	START_TIMING("neighborhood_search");
+	m_neighborhoodSearch->find_neighbors(modelIdx, particleIndices, particleCount);
+	STOP_TIMING_AVG;
+}
+
 void Simulation::performNeighborhoodSearchSort()
 {
 	if (!zSortEnabled())

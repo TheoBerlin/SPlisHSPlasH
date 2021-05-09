@@ -332,6 +332,7 @@ namespace SPH
 		/** Perform the neighborhood search for all fluid particles.
 		*/
 		virtual void performNeighborhoodSearch();
+		virtual void performNeighborhoodSearch(unsigned int modelIdx, const unsigned int* particleIndices, unsigned int particleCount);
 		void performNeighborhoodSearchSort();
 
 		void computeNonPressureForces();

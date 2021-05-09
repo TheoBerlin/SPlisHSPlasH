@@ -55,7 +55,7 @@ namespace SPH
 
 		/** Perform the neighborhood search for all fluid particles.
 		*/
-		void performNeighborhoodSearch();
+		void performNeighborhoodSearch(unsigned int level);
 		void calculateLevel(unsigned int level, Real dt);
 		void interpolateBorderParticles(unsigned int level);
 

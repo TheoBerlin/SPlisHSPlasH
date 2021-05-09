@@ -185,6 +185,8 @@ void TimeStepADFSPH::step()
 		m_cycleHighestLevel = m_highestLevelToStep;
 	}
 
+	m_highestLevelToStep = std::min(m_highestLevelToStep, m_cycleHighestLevel);
+
 	Real timeStepSize = tm->getTimeStepSize();
 	const Real largestTimeStepSize = timeStepSize * std::pow(LEVEL_TIMESTEP_MULTIPLIER, m_highestLevelToStep);
 
@@ -1360,19 +1362,28 @@ void TimeStepADFSPH::reset()
 	m_iterationsV = 0;
 }
 
-void TimeStepADFSPH::performNeighborhoodSearch()
+void TimeStepADFSPH::performNeighborhoodSearch(unsigned int level)
 {
-	if (Simulation::getCurrent()->zSortEnabled())
-	{
-		if (m_counter % 500 == 0)
-		{
-			Simulation::getCurrent()->performNeighborhoodSearchSort();
-			m_simulationData.performNeighborhoodSearchSort();
-		}
-		m_counter++;
-	}
+	Simulation* sim = Simulation::getCurrent();
 
-	Simulation::getCurrent()->performNeighborhoodSearch();
+	if (level == m_cycleHighestLevel)
+	{
+		// Perform neighborhood search for all particles
+		sim->performNeighborhoodSearch();
+	}
+	else
+	{
+		// Perform neighborhood for the current region and its border particles
+		const unsigned int nModels = sim->numberOfFluidModels();
+		for (unsigned int modelIdx = 0; modelIdx < nModels; modelIdx++)
+		{
+			const FluidModel* model = sim->getFluidModel(modelIdx);
+			const unsigned int nParticles = model->numActiveParticles();
+			const unsigned int* particleIndices = model->getParticleIndices();
+
+			sim->performNeighborhoodSearch(modelIdx, particleIndices, nParticles);
+		}
+	}
 }
 
 void TimeStepADFSPH::calculateLevel(unsigned int level, Real dt)
@@ -1399,7 +1410,7 @@ void TimeStepADFSPH::calculateLevel(unsigned int level, Real dt)
 	const bool newNeighborhoodSearch = level == m_highestLevelToStep;
 	if (newNeighborhoodSearch)
 	{
-		performNeighborhoodSearch();
+		performNeighborhoodSearch(level);
 	}
 
 #ifdef USE_PERFORMANCE_OPTIMIZATION
