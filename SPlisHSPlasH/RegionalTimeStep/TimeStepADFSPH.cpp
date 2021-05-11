@@ -332,11 +332,13 @@ void TimeStepADFSPH::divergenceSolve()
 		#pragma omp parallel default(shared)
 		{
 			FluidModel* model = sim->getFluidModel(fluidModelIndex);
-			const int numParticles = (int)model->getNumActiveParticles0();
+			const int numParticles = (int)model->numActiveParticles();
+			const unsigned int* particleIndices = model->getParticleIndices();
 
 			#pragma omp for schedule(static)
-			for (int i = 0; i < numParticles; i++)
+			for (int particleNr = 0; particleNr < numParticles; particleNr++)
 			{
+				const unsigned int i = particleIndices[particleNr];
 				computeDensityChange(fluidModelIndex, i, h);
 				m_simulationData.getFactor(fluidModelIndex, i) *= invH;
 
@@ -388,17 +390,20 @@ void TimeStepADFSPH::divergenceSolve()
 	for (unsigned int fluidModelIndex = 0; fluidModelIndex < nFluids; fluidModelIndex++)
 	{
 		FluidModel* model = sim->getFluidModel(fluidModelIndex);
-		const int numParticles = (int)model->getNumActiveParticles0();
+		const int numParticles = (int)model->numActiveParticles();
+		const unsigned int* particleIndices = model->getParticleIndices();
 
 #ifdef USE_WARMSTART_V
-		for (int i = 0; i < numParticles; i++)
+		for (int particleNr = 0; particleNr < numParticles; particleNr++)
 		{
+			const unsigned int i = particleIndices[particleNr];
 			m_simulationData.getKappaV(fluidModelIndex, i) *= h;
 		}
 #endif
 
-		for (int i = 0; i < numParticles; i++)
+		for (int particleNr = 0; particleNr < numParticles; particleNr++)
 		{
+			const unsigned int i = particleIndices[particleNr];
 			m_simulationData.getFactor(fluidModelIndex, i) *= h;
 		}
 	}
@@ -982,7 +987,7 @@ void TimeStepADFSPH::warmstartDivergenceSolve(const unsigned int fluidModelIndex
 {
 	Simulation *sim = Simulation::getCurrent();
 	FluidModel *model = sim->getFluidModel(fluidModelIndex);
-	const int numParticles = (int)model->getNumActiveParticles0();
+	const int numParticles = (int)model->numActiveParticles();
 	if (numParticles == 0)
 		return;
 
@@ -1001,9 +1006,12 @@ void TimeStepADFSPH::warmstartDivergenceSolve(const unsigned int fluidModelIndex
 		// the last step to make the stiffness value independent
 		// of the time step size
 		//////////////////////////////////////////////////////////////////////////
+		const unsigned int* particleIndices = model->getParticleIndices();
+
 		#pragma omp for schedule(static)
-		for (int i = 0; i < numParticles; i++)
+		for (int particleNr = 0; particleNr < numParticles; particleNr++)
 		{
+			const unsigned int i = particleIndices[particleNr];
 			computeDensityChange(fluidModelIndex, i, h);
 			if (m_simulationData.getDensityAdv(fluidModelIndex, i) > 0.0)
 				m_simulationData.getKappaV(fluidModelIndex, i) = static_cast<Real>(0.5) * max(m_simulationData.getKappaV(fluidModelIndex, i), static_cast<Real>(-0.5)) * invH;
@@ -1012,8 +1020,9 @@ void TimeStepADFSPH::warmstartDivergenceSolve(const unsigned int fluidModelIndex
 		}
 
 		#pragma omp for schedule(static)
-		for (int i = 0; i < numParticles; i++)
+		for (int particleNr = 0; particleNr < numParticles; particleNr++)
 		{
+			const unsigned int i = particleIndices[particleNr];
 			if (model->getParticleState(i) != ParticleState::Active)
 			{
 				m_simulationData.getKappaV(fluidModelIndex, i) = 0.0;
@@ -1098,7 +1107,7 @@ void TimeStepADFSPH::divergenceSolveIteration(const unsigned int fluidModelIndex
 {
 	Simulation *sim = Simulation::getCurrent();
 	FluidModel *model = sim->getFluidModel(fluidModelIndex);
-	const int numParticles = (int)model->getNumActiveParticles0();
+	const int numParticles = (int)model->numActiveParticles();
 	if (numParticles == 0)
 		return;
 
@@ -1116,9 +1125,12 @@ void TimeStepADFSPH::divergenceSolveIteration(const unsigned int fluidModelIndex
 	//////////////////////////////////////////////////////////////////////////
 	#pragma omp parallel default(shared)
 	{
+		const unsigned int* particleIndices = model->getParticleIndices();
+
 		#pragma omp for schedule(static)
-		for (int i = 0; i < numParticles; i++)
+		for (int particleNr = 0; particleNr < numParticles; particleNr++)
 		{
+			const unsigned int i = particleIndices[particleNr];
 			if (model->getParticleState(i) != ParticleState::Active)
 				continue;
 
@@ -1205,8 +1217,9 @@ void TimeStepADFSPH::divergenceSolveIteration(const unsigned int fluidModelIndex
 		// Update rho_adv and density error
 		//////////////////////////////////////////////////////////////////////////
 		#pragma omp for reduction(+:density_error) schedule(static)
-		for (int i = 0; i < numParticles; i++)
+		for (int particleNr = 0; particleNr < numParticles; particleNr++)
 		{
+			const unsigned int i = particleIndices[particleNr];
 			computeDensityChange(fluidModelIndex, i, h);
 			density_error += m_simulationData.getDensityAdv(fluidModelIndex, i);
 		}
@@ -1432,7 +1445,7 @@ void TimeStepADFSPH::calculateLevel(unsigned int level, Real dt)
 		computeDFSPHFactor(fluidModelIndex); // Neighbor Positions
 	STOP_TIMING_AVG;
 
-	if (m_enableDivergenceSolver && level == 0)
+	if (m_enableDivergenceSolver)
 	{
 		START_TIMING("divergenceSolve");
 		divergenceSolve(); // Neighbor KappaV, Velocities, Advected Densities and DFSPH Factors
@@ -1563,7 +1576,7 @@ void TimeStepADFSPH::interpolateBorderParticles(unsigned int level)
 
 		#pragma omp parallel default(shared)
 		{
-			constexpr const Real lowerLevelInterpFactor = 0.70f;
+			constexpr const Real lowerLevelInterpFactor = 0.50f;
 			constexpr const Real higherLevelInterpFactor = 1.0f - lowerLevelInterpFactor;
 
 			#pragma omp for schedule(static)
