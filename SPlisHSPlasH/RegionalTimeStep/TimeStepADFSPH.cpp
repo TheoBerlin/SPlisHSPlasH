@@ -339,7 +339,7 @@ void TimeStepADFSPH::divergenceSolve()
 			for (int particleNr = 0; particleNr < numParticles; particleNr++)
 			{
 				const unsigned int i = particleIndices[particleNr];
-				computeDensityChange(fluidModelIndex, i, h);
+				computeDensityChange(fluidModelIndex, i);
 				m_simulationData.getFactor(fluidModelIndex, i) *= invH;
 
 //#ifdef USE_WARMSTART_V
@@ -1012,7 +1012,7 @@ void TimeStepADFSPH::warmstartDivergenceSolve(const unsigned int fluidModelIndex
 		for (int particleNr = 0; particleNr < numParticles; particleNr++)
 		{
 			const unsigned int i = particleIndices[particleNr];
-			computeDensityChange(fluidModelIndex, i, h);
+			computeDensityChange(fluidModelIndex, i);
 			if (m_simulationData.getDensityAdv(fluidModelIndex, i) > 0.0)
 				m_simulationData.getKappaV(fluidModelIndex, i) = static_cast<Real>(0.5) * max(m_simulationData.getKappaV(fluidModelIndex, i), static_cast<Real>(-0.5)) * invH;
 			else
@@ -1220,7 +1220,7 @@ void TimeStepADFSPH::divergenceSolveIteration(const unsigned int fluidModelIndex
 		for (int particleNr = 0; particleNr < numParticles; particleNr++)
 		{
 			const unsigned int i = particleIndices[particleNr];
-			computeDensityChange(fluidModelIndex, i, h);
+			computeDensityChange(fluidModelIndex, i);
 			density_error += m_simulationData.getDensityAdv(fluidModelIndex, i);
 		}
 	}
@@ -1289,7 +1289,7 @@ void TimeStepADFSPH::computeDensityAdv(unsigned int fluidModelIndex, unsigned in
 	densityAdv = max(densityAdv, static_cast<Real>(1.0));
 }
 
-void TimeStepADFSPH::computeDensityChange(unsigned int fluidModelIndex, unsigned int i, Real h)
+void TimeStepADFSPH::computeDensityChange(unsigned int fluidModelIndex, unsigned int i)
 {
 	Simulation *sim = Simulation::getCurrent();
 	FluidModel *model = sim->getFluidModel(fluidModelIndex);

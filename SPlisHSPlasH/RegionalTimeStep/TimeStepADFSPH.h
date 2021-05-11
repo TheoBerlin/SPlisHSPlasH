@@ -44,7 +44,7 @@ namespace SPH
 		void divergenceSolve();
 		void divergenceSolveIteration(const unsigned int fluidModelIndex, Real &avg_density_err);
 		void computeDensityAdv(unsigned int fluidModelIndex, unsigned int i, Real h, Real density0);
-		void computeDensityChange(unsigned int fluidModelIndex, unsigned int i, Real h);
+		void computeDensityChange(unsigned int fluidModelIndex, unsigned int i);
 
 #ifdef USE_WARMSTART_V
 		void warmstartDivergenceSolve(const unsigned int fluidModelIndex);
