@@ -13,11 +13,8 @@
 
 namespace SPH
 {
-    struct GridCell
+    struct CellParticlePairIndices
     {
-        Real maxSpeedSquared;
-        unsigned int regionLevel;
-
         /* Indices for m_cellParticlePairs. These mark the interval for the cell's particles within said array. */
         unsigned int pairIndexBegin;
         unsigned int pairIndexEnd;
@@ -68,7 +65,7 @@ namespace SPH
             void findCellParticlePairs();
 
             // Iterates through all grid cells to find the largest velocity. Results are also stored in m_maxSpeedSquared.
-            Real findMaxSpeedSquared();
+            void findMaxSpeedSquared();
 
             // Should only be called before the cell-particle pairs array is sorted
             void defineCellLevels();
@@ -109,7 +106,9 @@ namespace SPH
             std::array<std::vector<unsigned int>, REGION_LEVELS_COUNT> m_levelParticleCounts;
             std::array<std::vector<unsigned int>, REGION_LEVELS_COUNT> m_levelUnionsParticleCounts;
 
-            std::vector<std::vector<GridCell>> m_cells;
+            std::vector<std::vector<Real>> m_cellSpeedsSquared;
+            std::vector<std::vector<unsigned int>> m_cellRegionLevels;
+            std::vector<std::vector<CellParticlePairIndices>> m_cellPairIndices;
 
             /*  One element per cell. If a cell is in a region border, its regional level will be stored. If the cell
                 is not in a border, UINT32_MAX will be stored instead. */
