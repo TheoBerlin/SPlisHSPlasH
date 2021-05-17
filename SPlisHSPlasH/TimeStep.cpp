@@ -520,7 +520,6 @@ void TimeStep::precomputeValues(bool recomputeIndices)
 	for (unsigned int fluidModelIndex = 0; fluidModelIndex < nFluids; fluidModelIndex++)
 	{
 		FluidModel* model = sim->getFluidModel(fluidModelIndex);
-		const int numParticles = (int)model->getNumActiveParticles0();
 
 		auto& precomputed_indices = model->get_precomputed_indices();
 		auto& precomputed_indices_same_phase = model->get_precomputed_indices_same_phase();
@@ -528,6 +527,8 @@ void TimeStep::precomputeValues(bool recomputeIndices)
 
 		if (recomputeIndices)
 		{
+			const int numParticles = (int)model->getNumActiveParticles0();
+
 			precomputed_indices.clear();
 			precomputed_indices_same_phase.clear();
 			precomputed_V_gradW.clear();
@@ -565,9 +566,14 @@ void TimeStep::precomputeValues(bool recomputeIndices)
 
 		#pragma omp parallel default(shared)
 		{
+			const unsigned int* particleIndices = model->getParticleIndices();
+			const int numParticles = (int)model->numActiveParticles2();
+
 			#pragma omp for schedule(static)
-			for (int i = 0; i < numParticles; i++)
+			for (int particleNr = 0; particleNr < numParticles; particleNr++)
 			{
+				const unsigned int i = particleIndices[particleNr];
+
 				const Vector3r& xi = model->getPosition(i);
 				const Vector3f8 xi_avx(xi);
 				unsigned int base = precomputed_indices[i];

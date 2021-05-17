@@ -32,8 +32,10 @@ void ParticleGrid::init()
     const unsigned int nModels = simulation->numberOfFluidModels();
     m_cellParticlePairs.resize(nModels);
     m_cellBorderLevels.resize(nModels);
+    m_cellSecondBorderLevels.resize(nModels);
     m_particleIndices.resize(nModels);
     m_borderParticleIndices.resize(nModels);
+    m_secondBorderParticleIndices.resize(nModels);
     m_particleLevels.resize(nModels);
     m_particleBorderLevels.resize(nModels);
     m_cellSpeedsSquared.resize(nModels);
@@ -47,11 +49,13 @@ void ParticleGrid::init()
 		m_cellParticlePairs[modelIdx].resize(nParticles);
         m_particleIndices[modelIdx].resize(nParticles);
         m_borderParticleIndices[modelIdx].reserve(nParticles);
+        m_secondBorderParticleIndices[modelIdx].reserve(nParticles);
 
         m_cellSpeedsSquared[modelIdx].resize(cellCount);
         m_cellRegionLevels[modelIdx].resize(cellCount);
         m_cellPairIndices[modelIdx].resize(cellCount);
         m_cellBorderLevels[modelIdx].resize(cellCount);
+        m_cellSecondBorderLevels[modelIdx].resize(cellCount);
 
         m_particleLevels[modelIdx].resize(nParticles);
         m_particleBorderLevels[modelIdx].resize(nParticles);
@@ -66,7 +70,10 @@ void ParticleGrid::init()
     }
 
     for (unsigned int level = 0; level < REGION_LEVELS_COUNT - 1; level++)
+    {
         m_levelBorderParticleCounts[level].resize(nModels);
+        m_nSecondBorderUnionParticles[level].resize(nModels);
+    }
 }
 
 void ParticleGrid::determineRegions()
@@ -146,6 +153,11 @@ void ParticleGrid::enableBorderParticleIndices(unsigned int modelIdx, unsigned i
         const unsigned int* borderParticleIndices = &m_borderParticleIndices[modelIdx][borderParticlesStartIdx];
 
         std::copy_n(borderParticleIndices, levelBorderParticleCount, particleIndices);
+
+        // Write second border particle indices
+        const unsigned int* secondBorderParticles = m_secondBorderParticleIndices[modelIdx].data();
+        const unsigned int secondBorderParticleCount = m_nSecondBorderUnionParticles[level][modelIdx];
+        std::copy_n(secondBorderParticles, secondBorderParticleCount, &particleIndices[levelBorderParticleCount]);
     }
 }
 
@@ -495,8 +507,10 @@ void ParticleGrid::identifyRegionBorders()
             {
                 const CellParticlePairIndices& pairIndices = cellParticlePairIndices[cellIdx];
 
-                // Skip empty cells
-                if (pairIndices.pairIndexBegin == pairIndices.pairIndexEnd)
+                const unsigned int cellLevel = cellRegionLevels[cellIdx];
+
+                // Skip empty cells and level 0 cells
+                if (pairIndices.pairIndexBegin == pairIndices.pairIndexEnd || cellLevel == 0)
                     continue;
 
                 const int cellPosZ = cellIdx / zStep;
@@ -510,8 +524,6 @@ void ParticleGrid::identifyRegionBorders()
                 const int offsetEndX = std::min(2, m_resolution.x() - cellPosX);
                 const int offsetEndY = std::min(2, m_resolution.y() - cellPosY);
                 const int offsetEndZ = std::min(2, m_resolution.z() - cellPosZ);
-
-                const unsigned int cellLevel = cellRegionLevels[cellIdx];
 
                 // Check all neighbors in a 3x3x3 grid around the cell
                 for (int offsetZ = offsetStartZ; offsetZ < offsetEndZ; offsetZ++)
@@ -554,6 +566,95 @@ void ParticleGrid::identifyRegionBorders()
     }
 }
 
+void ParticleGrid::identifySecondBorderCells()
+{
+    Simulation *simulation = Simulation::getCurrent();
+    const unsigned int numFluidModels = simulation->numberOfFluidModels();
+
+    for (unsigned int modelIdx = 0; modelIdx < numFluidModels; modelIdx++)
+    {
+        std::vector<unsigned int> &cellSecondBorderLevels = m_cellSecondBorderLevels[modelIdx];
+        std::fill_n(cellSecondBorderLevels.data(), cellSecondBorderLevels.size(), UINT32_MAX);
+
+        std::vector<unsigned int>& particleSecondBorderLevels = m_particleSecondBorderLevels[modelIdx];
+        std::fill_n(particleSecondBorderLevels.data(), particleSecondBorderLevels.size(), UINT32_MAX);
+    }
+
+    for (unsigned int modelIdx = 0; modelIdx < numFluidModels; modelIdx++)
+    {
+        #pragma omp parallel default(shared)
+        {
+            const std::vector<unsigned int>& cellRegionLevels = m_cellRegionLevels[modelIdx];
+            const std::vector<unsigned int>& cellBorderLevels = m_cellBorderLevels[modelIdx];
+            std::vector<unsigned int>& cellSecondBorderLevels = m_cellSecondBorderLevels[modelIdx];
+            const std::vector<CellParticlePairIndices>& cellParticlePairIndices = m_cellPairIndices[modelIdx];
+            std::vector<unsigned int>& particleSecondBorderLevels = m_particleSecondBorderLevels[modelIdx];
+            const std::vector<CellParticlePair>& cellParticlePairs = m_cellParticlePairs[modelIdx];
+
+            const int cellCount = (int)cellBorderLevels.size();
+            const int zStep = m_resolution.x() * m_resolution.y();
+
+            #pragma omp for schedule(static)
+            for (int cellIdx = 0; cellIdx < cellCount; cellIdx++)
+            {
+                const CellParticlePairIndices& pairIndices = cellParticlePairIndices[cellIdx];
+
+                const unsigned int cellLevel = cellRegionLevels[cellIdx];
+
+                // Skip empty cells and level 0 cells
+                if (pairIndices.pairIndexBegin == pairIndices.pairIndexEnd || cellLevel == 0)
+                    continue;
+
+                const unsigned int cellBorderLevel = cellBorderLevels[cellIdx];
+                unsigned int& cellSecondBorderLevel = cellSecondBorderLevels[cellIdx];
+
+                const int cellPosZ = cellIdx / zStep;
+                const int cellPosY = (cellIdx - cellPosZ * zStep) / m_resolution.x();
+                const int cellPosX = cellIdx % m_resolution.x();
+
+                const int offsetStartX = std::max(-1, -cellPosX);
+                const int offsetStartY = std::max(-1, -cellPosY);
+                const int offsetStartZ = std::max(-1, -cellPosZ);
+
+                const int offsetEndX = std::min(2, m_resolution.x() - cellPosX);
+                const int offsetEndY = std::min(2, m_resolution.y() - cellPosY);
+                const int offsetEndZ = std::min(2, m_resolution.z() - cellPosZ);
+
+                // Check all neighbors in a 3x3x3 grid around the cell
+                for (int offsetZ = offsetStartZ; offsetZ < offsetEndZ; offsetZ++)
+                {
+                    for (int offsetY = offsetStartY; offsetY < offsetEndY; offsetY++)
+                    {
+                        for (int offsetX = offsetStartX; offsetX < offsetEndX; offsetX++)
+                        {
+                            const unsigned int neighborIdx = cellIdx + offsetX + offsetY * m_resolution.x() + offsetZ * zStep;
+                            const CellParticlePairIndices& neighborCellPairIndices = cellParticlePairIndices[neighborIdx];
+                            const unsigned int neighborBorderLevel = cellBorderLevels[neighborIdx];
+
+                            if (neighborBorderLevel < cellLevel)
+                            {
+                                cellSecondBorderLevel = std::min(cellSecondBorderLevel, neighborBorderLevel);
+                            }
+                        }
+                    }
+                }
+
+                if (cellSecondBorderLevel != UINT32_MAX)
+                {
+                    unsigned int pairIdx = pairIndices.pairIndexBegin;
+                    const unsigned int pairIdxEnd = pairIndices.pairIndexEnd;
+
+                    while (pairIdx < pairIdxEnd)
+                    {
+                        const unsigned int particleIdx = cellParticlePairs[pairIdx++].particleIndex;
+                        particleSecondBorderLevels[particleIdx] = cellSecondBorderLevel;
+                    }
+                }
+            }
+        }
+    }
+}
+
 void ParticleGrid::writeBorderIndices()
 {
     Simulation *simulation = Simulation::getCurrent();
@@ -562,9 +663,12 @@ void ParticleGrid::writeBorderIndices()
     for (unsigned int modelIdx = 0; modelIdx < numFluidModels; modelIdx++)
     {
         std::vector<unsigned int>& borderParticleIndices = m_borderParticleIndices[modelIdx];
+        std::vector<unsigned int>& secondBorderParticleIndices = m_borderParticleIndices[modelIdx];
         borderParticleIndices.clear();
+        secondBorderParticleIndices.clear();
 
-        const std::vector<unsigned int> &borderLevels = m_cellBorderLevels[modelIdx];
+        const std::vector<unsigned int>& borderLevels = m_cellBorderLevels[modelIdx];
+        const std::vector<unsigned int>& secondBorderLevels = m_cellSecondBorderLevels[modelIdx];
         const std::vector<CellParticlePairIndices>& cellParticlePairIndices = m_cellPairIndices[modelIdx];
         const std::vector<CellParticlePair>& cellParticlePairs = m_cellParticlePairs[modelIdx];
 
@@ -574,6 +678,7 @@ void ParticleGrid::writeBorderIndices()
         {
             const unsigned int indicesInitialSize = borderParticleIndices.size();
 
+            // Write border particle indices
             for (unsigned int cellIdx = 0; cellIdx < cellCount; cellIdx++)
             {
                 if (borderLevels[cellIdx] == level)
@@ -592,6 +697,26 @@ void ParticleGrid::writeBorderIndices()
             }
 
             m_levelBorderParticleCounts[level][modelIdx] = borderParticleIndices.size() - indicesInitialSize;
+
+            // Write border neighbor particle indices
+            for (unsigned int cellIdx = 0; cellIdx < cellCount; cellIdx++)
+            {
+                if (secondBorderLevels[cellIdx] == level)
+                {
+                    const CellParticlePairIndices& pairIndices = cellParticlePairIndices[cellIdx];
+
+                    unsigned int pairIdx = pairIndices.pairIndexBegin;
+                    const unsigned int pairIdxEnd = pairIndices.pairIndexEnd;
+
+                    while (pairIdx < pairIdxEnd)
+                    {
+                        const unsigned int particleIdx = cellParticlePairs[pairIdx++].particleIndex;
+                        secondBorderParticleIndices.push_back(particleIdx);
+                    }
+                }
+            }
+
+            m_nSecondBorderUnionParticles[level][modelIdx] = secondBorderParticleIndices.size();
         }
     }
 }

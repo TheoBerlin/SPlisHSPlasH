@@ -459,9 +459,9 @@ void FluidModel::setNumActiveParticles(const unsigned int num)
 	m_numActiveParticles = num;
 }
 
-unsigned int FluidModel::numActiveParticles() const
+void FluidModel::setNumActiveParticles2(const unsigned int num)
 {
-	return m_numActiveParticles;
+	m_numActiveParticles2 = num;
 }
 
 void FluidModel::setDragMethodChangedCallback(std::function<void()> const& callBackFct)

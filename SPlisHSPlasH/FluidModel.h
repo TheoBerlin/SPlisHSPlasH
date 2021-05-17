@@ -162,6 +162,7 @@ namespace SPH
 
 			unsigned int m_numActiveParticles;
 			unsigned int m_numActiveParticles0;
+			unsigned int m_numActiveParticles2;
 
 			virtual void initParameters();
 
@@ -196,6 +197,7 @@ namespace SPH
 			void removeFieldByName(const std::string &fieldName);
 
 			void setNumActiveParticles(const unsigned int num);
+			void setNumActiveParticles2(const unsigned int num);
 			unsigned int numberOfParticles() const { return static_cast<unsigned int>(m_x.size()); }
 
 			EmitterSystem* getEmitterSystem() { return m_emitterSystem; }
@@ -210,7 +212,8 @@ namespace SPH
 			FORCE_INLINE void setParticleIndices(const unsigned int* particleIndices)	{ m_particleIndices = particleIndices; }
 
 			const unsigned int numParticles() const { return static_cast<unsigned int>(m_masses.size()); }
-			unsigned int numActiveParticles() const;
+			FORCE_INLINE unsigned int numActiveParticles() const	{ return m_numActiveParticles; }
+			FORCE_INLINE unsigned int numActiveParticles2() const	{ return m_numActiveParticles2; }
 
 			unsigned int getNumActiveParticles0() const { return m_numActiveParticles0; }
 			void setNumActiveParticles0(unsigned int val) { m_numActiveParticles0 = val; }

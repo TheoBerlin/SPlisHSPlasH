@@ -49,7 +49,8 @@ namespace SPH
             FORCE_INLINE const std::vector<unsigned int> *getLevelParticleIndices() const           { return m_particleIndices.data(); }
             FORCE_INLINE const unsigned int *getLevelParticleCounts(unsigned int level) const       { return m_levelParticleCounts[level].data(); }
             FORCE_INLINE const unsigned int *getLevelUnionParticleCounts(unsigned int level) const  { return m_levelUnionsParticleCounts[level].data(); }
-            FORCE_INLINE unsigned int getLevelBorderParticleCounts(unsigned int level, unsigned int modelIdx) const  { return m_levelBorderParticleCounts[level][modelIdx]; }
+            FORCE_INLINE unsigned int getLevelBorderParticleCounts(unsigned int level, unsigned int modelIdx) const     { return m_levelBorderParticleCounts[level][modelIdx]; }
+            FORCE_INLINE unsigned int getSecondBorderParticleCounts(unsigned int level, unsigned int modelIdx) const    { return m_nSecondBorderUnionParticles[level][modelIdx]; }
             FORCE_INLINE const Vector3f& getGridSize() const { return m_gridSize; }
             FORCE_INLINE unsigned int getParticleLevel(unsigned int modelIdx, unsigned int particleIdx) const { return m_particleLevels[modelIdx][particleIdx]; }
 
@@ -72,6 +73,8 @@ namespace SPH
             void defineParticleLevels();
 
             void identifyRegionBorders();
+            // Find all cells that neighbor border cells
+            void identifySecondBorderCells();
 
             // Writes border particle indices to m_borderParticleIndices
             void writeBorderIndices();
@@ -100,6 +103,7 @@ namespace SPH
             /*  Indices to particles that belong to borders. Sorted by the lowest neighboring level.
                 Use m_levelBorderParticleCounts to find each level's bordering particles. */
             std::vector<std::vector<unsigned int>> m_borderParticleIndices;
+            std::vector<std::vector<unsigned int>> m_secondBorderParticleIndices;
 
             /*  The amount of particles per level. The latter contains the particle count of each level and their
                 sublevels. */
@@ -113,11 +117,14 @@ namespace SPH
             /*  One element per cell. If a cell is in a region border, its regional level will be stored. If the cell
                 is not in a border, UINT32_MAX will be stored instead. */
             std::vector<std::vector<unsigned int>> m_cellBorderLevels;
+            std::vector<std::vector<unsigned int>> m_cellSecondBorderLevels;
 
             // One element per particle. 1 signifies that a particle is in a regional border
             std::vector<std::vector<unsigned int>> m_particleBorderLevels;
+            std::vector<std::vector<unsigned int>> m_particleSecondBorderLevels;
 
             std::array<std::vector<unsigned int>, REGION_LEVELS_COUNT - 1> m_levelBorderParticleCounts;
+            std::array<std::vector<unsigned int>, REGION_LEVELS_COUNT - 1> m_nSecondBorderUnionParticles;
 
             // Assumes the scene uses unitbox.obj. Each component is a distance to a wall.
             Vector3r m_gridSize = { 1.0f, 1.0f, 1.0f };

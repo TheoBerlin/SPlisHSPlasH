@@ -635,14 +635,16 @@ void TimeStepADFSPH::divergenceSolve()
  		//////////////////////////////////////////////////////////////////////////
  		// Compute pressure stiffness denominator
  		//////////////////////////////////////////////////////////////////////////
-		const int numParticles = (int)model->getNumActiveParticles0();
+		const int numParticles = (int)model->numActiveParticles2();
+		const unsigned int* particleIndices = model->getParticleIndices();
 
 		#pragma omp for schedule(static)
-		for (int i = 0; i < numParticles; i++)
+		for (int particleNr = 0; particleNr < numParticles; particleNr++)
 		{
  			//////////////////////////////////////////////////////////////////////////
  			// Compute gradient dp_i/dx_j * (1/k)  and dp_j/dx_j * (1/k)
  			//////////////////////////////////////////////////////////////////////////
+			const unsigned int i = particleIndices[particleNr];
  			const Vector3r &xi = model->getPosition(i);
 
  			Real sum_grad_p_k;
@@ -1815,9 +1817,14 @@ void TimeStepADFSPH::setActiveParticles(unsigned int level)
 		FluidModelCopy* modelCopy = m_fluidModelCopies[modelIdx];
 
 		const unsigned int numBorderParticles = level < REGION_LEVELS_COUNT - 1 ? m_particleGrid.getLevelBorderParticleCounts(level, modelIdx) : 0;
-		const unsigned int numActiveParticles = particleCounts[modelIdx] + numBorderParticles;
+		unsigned int numActiveParticles = particleCounts[modelIdx] + numBorderParticles;
 		model->setNumActiveParticles(numActiveParticles);
 		modelCopy->setNumActiveParticles(numActiveParticles);
+
+		const unsigned int numSecondBorderParticles = level < REGION_LEVELS_COUNT - 1 ? m_particleGrid.getSecondBorderParticleCounts(level, modelIdx) : 0;
+		numActiveParticles += numSecondBorderParticles;
+		model->setNumActiveParticles2(numActiveParticles);
+		modelCopy->setNumActiveParticles2(numActiveParticles);
 
 		const unsigned int* modelParticleIndices = particleIndices[modelIdx].data();
 		model->setParticleIndices(modelParticleIndices);
