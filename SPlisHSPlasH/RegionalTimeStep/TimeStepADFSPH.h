@@ -21,6 +21,7 @@ namespace SPH
 		SimulationDataADFSPH m_simulationDataCopy;
 		ParticleGrid m_particleGrid;
 		unsigned int m_counter;
+		bool m_shouldSearchSort;
 		const Real m_eps = static_cast<Real>(1.0e-5);
 		bool m_enableDivergenceSolver;
 		unsigned int m_iterationsV;

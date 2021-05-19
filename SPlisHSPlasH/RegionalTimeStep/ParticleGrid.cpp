@@ -77,11 +77,18 @@ void ParticleGrid::determineRegions()
     defineCellLevels();
     defineParticleLevels();
 
-    /* These two functions could be executed in parallel */
-    identifyRegionBorders();
-    defineLevelParticleIndices();
+    #pragma omp parallel sections
+    {
+        {
+            identifyRegionBorders();
+            writeBorderIndices();
+        }
 
-    writeBorderIndices();
+        #pragma omp section
+        {
+            defineLevelParticleIndices();
+        }
+    }
 }
 
 void ParticleGrid::calculateLevelBorder(unsigned int level)
@@ -494,9 +501,10 @@ void ParticleGrid::identifyRegionBorders()
             for (int cellIdx = 0; cellIdx < cellCount; cellIdx++)
             {
                 const CellParticlePairIndices& pairIndices = cellParticlePairIndices[cellIdx];
+                const unsigned int cellLevel = cellRegionLevels[cellIdx];
 
                 // Skip empty cells
-                if (pairIndices.pairIndexBegin == pairIndices.pairIndexEnd)
+                if (pairIndices.pairIndexBegin == pairIndices.pairIndexEnd || cellLevel == 0)
                     continue;
 
                 const int cellPosZ = cellIdx / zStep;
@@ -510,8 +518,6 @@ void ParticleGrid::identifyRegionBorders()
                 const int offsetEndX = std::min(2, m_resolution.x() - cellPosX);
                 const int offsetEndY = std::min(2, m_resolution.y() - cellPosY);
                 const int offsetEndZ = std::min(2, m_resolution.z() - cellPosZ);
-
-                const unsigned int cellLevel = cellRegionLevels[cellIdx];
 
                 // Check all neighbors in a 3x3x3 grid around the cell
                 for (int offsetZ = offsetStartZ; offsetZ < offsetEndZ; offsetZ++)
@@ -529,11 +535,15 @@ void ParticleGrid::identifyRegionBorders()
                             if (neighborCellPairIndices.pairIndexBegin != neighborCellPairIndices.pairIndexEnd && neighborRegionLevel < cellLevel)
                             {
                                 cellBorderLevels[cellIdx] = std::min(cellBorderLevels[cellIdx], neighborRegionLevel);
+
+                                if (neighborRegionLevel == 0)
+                                    goto assignParticleLevels;
                             }
                         }
                     }
                 }
 
+            assignParticleLevels: ;
                 const unsigned int cellBorderLevel = cellBorderLevels[cellIdx];
                 if (cellBorderLevel != UINT32_MAX)
                 {
