@@ -31,6 +31,7 @@ TimeStepADFSPH::TimeStepADFSPH() :
 	m_simulationDataCopy.init(true);
 	m_particleGrid.init();
 	m_counter = 0;
+	m_shouldSearchSort = false;
 	m_iterationsV = 0;
 	m_enableDivergenceSolver = true;
 	m_maxIterationsV = 100;
@@ -141,6 +142,24 @@ void TimeStepADFSPH::step()
 			m_highestLevelToStep = level;
 			break;
 		}
+	}
+
+	if (Simulation::getCurrent()->zSortEnabled())
+	{
+		if (m_counter % 500 == 0)
+		{
+			m_shouldSearchSort = true;
+		}
+
+		if (m_shouldSearchSort && m_subStepNr == 0)
+		{
+			Simulation::getCurrent()->performNeighborhoodSearchSort();
+			m_simulationData.performNeighborhoodSearchSort();
+
+			m_shouldSearchSort = false;
+		}
+
+		m_counter++;
 	}
 
 	if (m_highestLevelToStep > 0)
@@ -1422,15 +1441,14 @@ void TimeStepADFSPH::calculateLevel(unsigned int level, Real dt)
 
 	m_lastCalculatedLevel = level;
 
-	const bool newNeighborhoodSearch = level == m_highestLevelToStep;
-	if (newNeighborhoodSearch)
+	if (level == m_highestLevelToStep)
 	{
 		performNeighborhoodSearch(level);
 	}
 
 #ifdef USE_PERFORMANCE_OPTIMIZATION
 	START_TIMING("Precompute Values");
-	precomputeValues(newNeighborhoodSearch);
+	precomputeValues(level == m_highestLevelToStep);
 	STOP_TIMING_AVG;
 #endif
 

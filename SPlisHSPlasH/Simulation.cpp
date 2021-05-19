@@ -86,7 +86,7 @@ Simulation::Simulation ()
 	m_simulationMethodChanged = NULL;
 
 	m_sim2D = false;
-	m_enableZSort = false;
+	m_enableZSort = true;
 
 	m_animationFieldSystem = new AnimationFieldSystem();
 	m_boundaryHandlingMethod = static_cast<int>(BoundaryHandlingMethods::Bender2019);

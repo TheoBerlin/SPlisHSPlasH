@@ -84,11 +84,18 @@ void ParticleGrid::determineRegions()
     defineCellLevels();
     defineParticleLevels();
 
-    /* These two functions could be executed in parallel */
-    identifyRegionBorders();
-    defineLevelParticleIndices();
+    #pragma omp parallel sections
+    {
+        {
+            identifyRegionBorders();
+            writeBorderIndices();
+        }
 
-    writeBorderIndices();
+        #pragma omp section
+        {
+            defineLevelParticleIndices();
+        }
+    }
 }
 
 void ParticleGrid::calculateLevelBorder(unsigned int level)
@@ -506,7 +513,6 @@ void ParticleGrid::identifyRegionBorders()
             for (int cellIdx = 0; cellIdx < cellCount; cellIdx++)
             {
                 const CellParticlePairIndices& pairIndices = cellParticlePairIndices[cellIdx];
-
                 const unsigned int cellLevel = cellRegionLevels[cellIdx];
 
                 // Skip empty cells and level 0 cells
@@ -541,11 +547,15 @@ void ParticleGrid::identifyRegionBorders()
                             if (neighborCellPairIndices.pairIndexBegin != neighborCellPairIndices.pairIndexEnd && neighborRegionLevel < cellLevel)
                             {
                                 cellBorderLevels[cellIdx] = std::min(cellBorderLevels[cellIdx], neighborRegionLevel);
+
+                                if (neighborRegionLevel == 0)
+                                    goto assignParticleLevels;
                             }
                         }
                     }
                 }
 
+            assignParticleLevels: ;
                 const unsigned int cellBorderLevel = cellBorderLevels[cellIdx];
                 if (cellBorderLevel != UINT32_MAX)
                 {
