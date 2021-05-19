@@ -1426,7 +1426,7 @@ void TimeStepADFSPH::calculateLevel(unsigned int level, Real dt)
 	TimeManager *tm = TimeManager::getCurrent();
 	const unsigned int nModels = sim->numberOfFluidModels();
 
-	if (level < REGION_LEVELS_COUNT - 1 && m_lastCalculatedLevel != level)
+	if (level < m_cycleHighestLevel && m_lastCalculatedLevel != level)
 	{
 		START_TIMING("Particle Indices Handling");
 		for (unsigned int modelIdx = 0; modelIdx < nModels; modelIdx++)

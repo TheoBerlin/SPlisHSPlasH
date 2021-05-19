@@ -170,6 +170,7 @@ void FluidModel::initParameters()
 void FluidModel::reset()
 {
 	setNumActiveParticles(m_numActiveParticles0);
+	setNumActiveParticles2(m_numActiveParticles0);
 	const unsigned int nPoints = numActiveParticles();
 
 	// Fluid
