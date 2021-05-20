@@ -1424,7 +1424,7 @@ void TimeStepADFSPH::calculateLevel(unsigned int level, Real dt)
 	TimeManager *tm = TimeManager::getCurrent();
 	const unsigned int nModels = sim->numberOfFluidModels();
 
-	if (level < REGION_LEVELS_COUNT - 1 && m_lastCalculatedLevel != level)
+	if (level < m_cycleHighestLevel && m_lastCalculatedLevel != level)
 	{
 		START_TIMING("Particle Indices Handling");
 		for (unsigned int modelIdx = 0; modelIdx < nModels; modelIdx++)
@@ -1518,7 +1518,7 @@ void TimeStepADFSPH::calculateLevel(unsigned int level, Real dt)
 	}
 
 	START_TIMING("pressureSolve");
-	pressureSolve();
+	pressureSolve(); // neighbor kappa, volume, velocity, density adv, factor
 	STOP_TIMING_AVG;
 
 	// checkParticles("Pressure\n");
