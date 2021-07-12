@@ -34,7 +34,7 @@ Emitter::~Emitter(void)
 void Emitter::reset()
 {
 	m_nextEmitTime = m_emitStartTime;
-	m_emitCounter = 0;	
+	m_emitCounter = 0;
 }
 
 Vector3r Emitter::getSize(const Real width, const Real height, const int type)
@@ -115,9 +115,9 @@ void Emitter::emitParticles(std::vector <unsigned int> &reusedParticles, unsigne
 		for (unsigned int m = 0; m < nModels; m++)
 		{
 			FluidModel *fm = sim->getFluidModel(m);
-			const unsigned int numParticles = fm->numActiveParticles();
+			const int numParticles = (int)fm->numActiveParticles();
 			#pragma omp parallel for schedule(static) default(shared)
-			for (int i = 0; i < (int)numParticles; i++)
+			for (int i = 0; i < numParticles; i++)
 			{
 				Vector3r &xi = fm->getPosition(i);
 				if (inBox(xi, pos, m_rotation, halfSize))
@@ -136,7 +136,7 @@ void Emitter::emitParticles(std::vector <unsigned int> &reusedParticles, unsigne
 
 	const Vector3r axisHeight = m_rotation.col(1);
 	const Vector3r axisWidth = m_rotation.col(2);
-	
+
 	const Real startX = -static_cast<Real>(0.5)*(m_width  - 1)*diam;
 	const Real startZ = -static_cast<Real>(0.5)*(m_height - 1)*diam;
 
@@ -189,7 +189,9 @@ void Emitter::emitParticles(std::vector <unsigned int> &reusedParticles, unsigne
 
 		if (numEmittedParticles != 0)
 		{
-			m_model->setNumActiveParticles(m_model->numActiveParticles() + numEmittedParticles);
+			const unsigned int newParticleCount = m_model->numActiveParticles() + numEmittedParticles;
+			m_model->setNumActiveParticles(newParticleCount);
+			m_model->setNumParticles(newParticleCount);
 			sim->emittedParticles(m_model, m_model->numActiveParticles() - numEmittedParticles);
 			sim->getNeighborhoodSearch()->resize_point_set(m_model->getPointSetIndex(), &m_model->getPosition(0)[0], m_model->numActiveParticles());
 		}
@@ -213,7 +215,10 @@ void Emitter::emitParticles(std::vector <unsigned int> &reusedParticles, unsigne
 					index++;
 				}
 			}
-			m_model->setNumActiveParticles(m_model->numActiveParticles() + numEmittedParticles);
+
+			const unsigned int newParticleCount = m_model->numActiveParticles() + numEmittedParticles;
+			m_model->setNumActiveParticles(newParticleCount);
+			m_model->setNumParticles(newParticleCount);
 			sim->emittedParticles(m_model, m_model->numActiveParticles() - numEmittedParticles);
 			sim->getNeighborhoodSearch()->resize_point_set(m_model->getPointSetIndex(), &m_model->getPosition(0)[0], m_model->numActiveParticles());
 		}
@@ -242,7 +247,7 @@ void Emitter::emitParticlesCircle(std::vector <unsigned int> &reusedParticles, u
 
 	if (t >= m_emitStartTime - 0.25 && t <= m_emitEndTime)
 	{
-		// animate emitted particles		
+		// animate emitted particles
 		const Vector3r & x0 = m_x;
 
 		const Real animationMarginAhead = sim->getSupportRadius();
@@ -337,7 +342,9 @@ void Emitter::emitParticlesCircle(std::vector <unsigned int> &reusedParticles, u
 
 		if (numEmittedParticles != 0)
 		{
-			m_model->setNumActiveParticles(m_model->numActiveParticles() + numEmittedParticles);
+			const unsigned int newParticleCount = m_model->numActiveParticles() + numEmittedParticles;
+			m_model->setNumActiveParticles(newParticleCount);
+			m_model->setNumParticles(newParticleCount);
 			sim->emittedParticles(m_model, m_model->numActiveParticles() - numEmittedParticles);
 			sim->getNeighborhoodSearch()->resize_point_set(m_model->getPointSetIndex(), &m_model->getPosition(0)[0], m_model->numActiveParticles());
 		}
@@ -363,7 +370,9 @@ void Emitter::emitParticlesCircle(std::vector <unsigned int> &reusedParticles, u
 					}
 				}
 			}
-			m_model->setNumActiveParticles(m_model->numActiveParticles() + numEmittedParticles);
+			const unsigned int newParticleCount = m_model->numActiveParticles() + numEmittedParticles;
+			m_model->setNumActiveParticles(newParticleCount);
+			m_model->setNumParticles(newParticleCount);
 			sim->emittedParticles(m_model, m_model->numActiveParticles() - numEmittedParticles);
 			sim->getNeighborhoodSearch()->resize_point_set(m_model->getPointSetIndex(), &m_model->getPosition(0)[0], m_model->numActiveParticles());
 		}

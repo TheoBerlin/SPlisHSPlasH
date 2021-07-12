@@ -40,49 +40,28 @@
 			"mapInvert": true,
 			"mapThickness": 0.0,
 			"mapResolution": [30,30,20]
-		},
-		{
-			"geometryFile": "../models/Dragon_50k.obj",
-			"translation": [1.5,0.05,-0.75],
-			"rotationAxis": [0, 1, 0],
-			"rotationAngle": 0,
-			"scale": [1, 1, 1],
-			"color": [0.1, 0.4, 0.6, 1.0],
-			"isDynamic": false,
-			"isWall": false,
-			"mapInvert": false,
-			"mapThickness": 0.0,
-			"mapResolution": [20,20,20]
-		},
-		{
-			"geometryFile": "../models/Dragon_50k.obj",
-			"translation": [1.5,0.05,0.75],
-			"rotationAxis": [0, 1, 0],
-			"rotationAngle": 0,
-			"scale": [1, 1, 1],
-			"color": [0.1, 0.4, 0.6, 1.0],
-			"isDynamic": false,
-			"isWall": false,
-			"mapInvert": false,
-			"mapThickness": 0.0,
-			"mapResolution": [20,20,20]
 		}
 	],
 	"FluidBlocks": [
 		{
 			"denseMode": 0,
-			"start": [-0.5, 0.0, -0.5],
-			"end": [0.5, 1.0, 0.5],
-			"translation": [-2.45, 0.0, 0.0],
-			"scale": [1, 2, 1],
-			"initialVelocity": [5.0, 0.0, 0.0]
-		},
+			"start": [-3.0, 0.0, -1.5],
+			"end": [3.0, 1.0, 1.5],
+			"translation": [0.0, 0.0, 0.0],
+			"scale": [1, 1, 1],
+			"initialVelocity": [0.0, 0.0, 0.0]
+		}
+	],
+	"Emitters": [
 		{
-			"denseMode": 0,
-			"start": [0.55, 0.0, -0.5],
-			"end": [1.55, 1.0, 0.5],
-			"translation": [-2.45, 0.0, 0.0],
-			"scale": [1, 2, 1]
+			"width": 8,
+			"height": 3,
+			"translation": [2.0,2.5,0.0],
+			"rotationAxis": [0, 0, 1],
+			"rotationAngle": -2.0,
+			"velocity": 4,
+			"type": 1,
+			"emitEndTime": 5
 		}
 	]
 }

@@ -62,13 +62,11 @@ void EmitterSystem::step()
 	for (unsigned int m = 0; m < nModels; m++)
 	{
 		FluidModel *fm = sim->getFluidModel(m);
-		const unsigned int numParticles = fm->numActiveParticles();
-		const unsigned int* particleIndices = fm->getParticleIndices();
+		const int numParticles = (int)fm->numActiveParticles();
 
 		#pragma omp parallel for schedule(static) default(shared)
-		for (int particleNr = 0; particleNr < numParticles; particleNr++)
+		for (int i = 0; i < numParticles; i++)
 		{
-			const unsigned int i = particleIndices[particleNr];
 			if (fm->getParticleState(i) == ParticleState::AnimatedByEmitter)
 				fm->setParticleState(i, ParticleState::Active);
 		}

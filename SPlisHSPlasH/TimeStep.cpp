@@ -520,7 +520,7 @@ void TimeStep::precomputeValues(bool recomputeIndices)
 	for (unsigned int fluidModelIndex = 0; fluidModelIndex < nFluids; fluidModelIndex++)
 	{
 		FluidModel* model = sim->getFluidModel(fluidModelIndex);
-		const int numParticles = (int)model->getNumActiveParticles0();
+		const int numParticles = (int)model->numParticles2();
 
 		auto& precomputed_indices = model->get_precomputed_indices();
 		auto& precomputed_indices_same_phase = model->get_precomputed_indices_same_phase();

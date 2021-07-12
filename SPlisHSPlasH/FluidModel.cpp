@@ -309,6 +309,7 @@ void FluidModel::initModel(const std::string &id, const unsigned int nFluidParti
 
 	m_numActiveParticles0 = nFluidParticles;
 	m_numActiveParticles = m_numActiveParticles0;
+	m_numParticles = m_numActiveParticles0;
 }
 
 
@@ -381,6 +382,23 @@ void SPH::FluidModel::copyParticleData(const FluidModel* fluidModel, const unsig
 	}
 
     m_V = fluidModel->m_V;
+}
+
+void SPH::FluidModel::copyParticleData(const FluidModel* fluidModel, unsigned int startIndex)
+{
+	const unsigned int numParticles = fluidModel->numParticles2();
+	for (unsigned int i = startIndex; i < numParticles; i++)
+	{
+		m_masses[i] = fluidModel->m_masses[i];
+		m_a[i] = fluidModel->m_a[i];
+		m_v0[i] = fluidModel->m_v0[i];
+		m_x0[i] = fluidModel->m_x0[i];
+		m_x[i] = fluidModel->m_x[i];
+		m_v[i] = fluidModel->m_v[i];
+		m_density[i] = fluidModel->m_density[i];
+		m_particleId[i] = fluidModel->m_particleId[i];
+		m_particleState[i] = fluidModel->m_particleState[i];
+	}
 }
 
 void SPH::FluidModel::swapParticleData(FluidModel* fluidModel, const unsigned int* particleIndices, const unsigned int* particleBorderLevels, int numParticles)

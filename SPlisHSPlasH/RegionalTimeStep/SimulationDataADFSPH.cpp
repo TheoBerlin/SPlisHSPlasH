@@ -147,7 +147,7 @@ void SimulationDataADFSPH::emittedParticles(FluidModel *model, const unsigned in
 {
 	// initialize kappa values for new particles
 	const unsigned int fluidModelIndex = model->getPointSetIndex();
-	for (unsigned int j = startIndex; j < model->numActiveParticles(); j++)
+	for (unsigned int j = startIndex; j < model->numParticles2(); j++)
 	{
 		m_kappa[fluidModelIndex][j] = 0.0;
 		m_kappaV[fluidModelIndex][j] = 0.0;

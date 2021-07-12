@@ -314,12 +314,12 @@ void Simulator_GUI_imgui::render()
 {
 	float gridColor[4] = { 0.2f, 0.2f, 0.2f, 1.0f };
 	const bool sim2D = Simulation::getCurrent()->is2DSimulation();
-	if (sim2D)
-		MiniGL::drawGrid_xy(gridColor);
-	else
-		MiniGL::drawGrid_xz(gridColor);
+	// if (sim2D)
+	// 	MiniGL::drawGrid_xy(gridColor);
+	// else
+	// 	MiniGL::drawGrid_xz(gridColor);
 
-	MiniGL::coordinateSystem();
+	// MiniGL::coordinateSystem();
 
 	Simulation *sim = Simulation::getCurrent();
 	SimulatorBase *base = getSimulatorBase();

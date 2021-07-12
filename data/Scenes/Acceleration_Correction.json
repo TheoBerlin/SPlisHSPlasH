@@ -3,6 +3,8 @@
 	{
 		"particleRadius": 0.025,
 		"simulationMethod": 6,
+		"cameraPosition": [0,0.4,10],
+		"cameraLookat": [0,0.4,0],
 		"numberOfStepsPerRenderUpdate": 2,
 		"gravitation": [0,-9.81,0],
 		"cflMethod": 1,
@@ -41,41 +43,16 @@
 			"mapInvert": true,
 			"mapThickness": 0.0,
 			"mapResolution": [30,30,20]
-		},
-		{
-			"geometryFile": "../models/Dragon_50k.obj",
-			"translation": [1.5,0.05,-0.75],
-			"rotationAxis": [0, 1, 0],
-			"rotationAngle": 0,
-			"scale": [1, 1, 1],
-			"color": [0.1, 0.4, 0.6, 1.0],
-			"isDynamic": false,
-			"isWall": false,
-			"mapInvert": false,
-			"mapThickness": 0.0,
-			"mapResolution": [20,20,20]
-		},
-		{
-			"geometryFile": "../models/Dragon_50k.obj",
-			"translation": [1.5,0.05,0.75],
-			"rotationAxis": [0, 1, 0],
-			"rotationAngle": 0,
-			"scale": [1, 1, 1],
-			"color": [0.1, 0.4, 0.6, 1.0],
-			"isDynamic": false,
-			"isWall": false,
-			"mapInvert": false,
-			"mapThickness": 0.0,
-			"mapResolution": [20,20,20]
 		}
 	],
-	"FluidModels": [
+	"FluidBlocks": [
 		{
-			"particleFile": "../models/bunny.bgeo",
-			"translation": [-2.0, 1.1, 0.0],
-			"rotationAxis": [0, 1, 0],
-			"rotationAngle": 3.14159265359,
-			"scale": [1, 1, 1]
+			"denseMode": 0,
+			"start": [-2.5, 3.4, -1.5],
+			"end": [2.5, 3.9, 1.5],
+			"translation": [0.0, 0.0, 0.0],
+			"scale": [1, 1, 1],
+			"initialVelocity": [0.0, 0.0, 0.0]
 		}
 	]
 }

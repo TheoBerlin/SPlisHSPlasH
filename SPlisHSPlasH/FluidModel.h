@@ -162,6 +162,7 @@ namespace SPH
 
 			unsigned int m_numActiveParticles;
 			unsigned int m_numActiveParticles0;
+			unsigned int m_numParticles;
 
 			virtual void initParameters();
 
@@ -179,6 +180,7 @@ namespace SPH
 		public:
 			void copyParticleData(const FluidModel* fluidModel);
 			void copyParticleData(const FluidModel* fluidModel, const unsigned int* particleIndices, int numParticles);
+			void copyParticleData(const FluidModel* fluidModel, unsigned int startIndex);
 
 			// Swap data with other fluid model if a particle is part of a border
 			void swapParticleData(FluidModel* fluidModel, const unsigned int* particleIndices, const unsigned int* particleBorderLevels, int numParticles);
@@ -196,6 +198,7 @@ namespace SPH
 			void removeFieldByName(const std::string &fieldName);
 
 			void setNumActiveParticles(const unsigned int num);
+			void setNumParticles(const unsigned int num) { m_numParticles = num; }
 			unsigned int numberOfParticles() const { return static_cast<unsigned int>(m_x.size()); }
 
 			EmitterSystem* getEmitterSystem() { return m_emitterSystem; }
@@ -210,6 +213,7 @@ namespace SPH
 			FORCE_INLINE void setParticleIndices(const unsigned int* particleIndices)	{ m_particleIndices = particleIndices; }
 
 			const unsigned int numParticles() const { return static_cast<unsigned int>(m_masses.size()); }
+			const unsigned int numParticles2() const { return m_numParticles; }
 			unsigned int numActiveParticles() const;
 
 			unsigned int getNumActiveParticles0() const { return m_numActiveParticles0; }

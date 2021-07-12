@@ -408,7 +408,7 @@ void Simulation::updateTimeStepSizeCFL()
 	for (unsigned int fluidModelIndex = 0; fluidModelIndex < numberOfFluidModels(); fluidModelIndex++)
 	{
 		FluidModel *fm = getFluidModel(fluidModelIndex);
-		const unsigned int numParticles = fm->getNumActiveParticles0();
+		const unsigned int numParticles = fm->numParticles2();
 		for (unsigned int i = 0; i < numParticles; i++)
 		{
 			const Vector3r &vel = fm->getVelocity(i);

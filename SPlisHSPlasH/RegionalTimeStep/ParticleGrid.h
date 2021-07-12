@@ -34,10 +34,6 @@ namespace SPH
             */
             void determineRegions();
 
-            /*  Finds the border particles between level and level + 1. Updates the particle counts and particle
-                indices to contain these border particles. */
-            void calculateLevelBorder(unsigned int level);
-
             // Writes border particle indices to m_particleIndices
             void enableBorderParticleIndices(unsigned int modelIdx, unsigned int level);
 
